@@ -22,6 +22,15 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+// General Libraries
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// OLED Libraries
+#include "../Inc/SSD1306/ssd1306.h"
+#include "../Inc/SSD1306/ssd1306_tests.h"
 
 /* USER CODE END Includes */
 
@@ -103,6 +112,19 @@ int main(void)
   MX_SPI1_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+
+  // Power On OLED
+  ssd1306_Init();
+  ssd1306_Fill(Black);
+  char * snow = "Snow-weAR Goggles";
+  ssd1306_SetCursor(2, 0);
+  int i;
+  for(i = 0; i < strlen(snow); i++)
+  {
+  	ssd1306_WriteChar(snow[i], Font_7x10, White);
+  	HAL_Delay(100);
+  	ssd1306_UpdateScreen();
+  }
 
   /* USER CODE END 2 */
 
