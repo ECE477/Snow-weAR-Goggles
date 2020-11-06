@@ -14,10 +14,10 @@ void MX_USART2_UART_Init(void)
 	huart2.Init.OverSampling = UART_OVERSAMPLING_16;
 	huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
 	huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
-	Error_Handler();
-  }
+    if (HAL_UART_Init(&huart2) != HAL_OK)
+    {
+	  Error_Handler();
+    }
 
 }
 
@@ -32,6 +32,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     __HAL_RCC_USART2_CLK_ENABLE();
 
     __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
     /**USART2 GPIO Configuration
     PA2     ------> USART2_TX
     PA3     ------> USART2_RX

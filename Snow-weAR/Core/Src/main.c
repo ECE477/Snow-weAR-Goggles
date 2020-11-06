@@ -19,7 +19,6 @@
 #include "main.h"
 #include "usart.h"
 #include "gpio.h"
-#include "dma.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -29,7 +28,7 @@
 UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_usart2_rx;
 
-uint8_t data[10] = {0};
+uint8_t data[20] = {0};
 
 void SystemClock_Config(void);
 
@@ -37,20 +36,20 @@ int main(void)
 {
 
     HAL_Init();
+    __HAL_RCC_USART2_CLK_ENABLE();
 
     SystemClock_Config();
-    __HAL_RCC_USART2_CLK_ENABLE();
-    HAL_UART_MspInit(&huart2);
+    MX_GPIO_Init();
     MX_USART2_UART_Init();
 
     //HAL_UART_Receive_DMA(&huart2, data, 10);
     //HAL_UART_Receive_IT(&huart2, data, 10);
-    uint8_t data1 = data[0];
+    //uint8_t data1 = data[0];
 
     while (1)
     {
-    	uint8_t dataPoll[10] = {0};
-      	HAL_UART_Receive(&huart2, dataPoll, 8, 5000);
+    	uint8_t dataPoll[100] = {0};
+      	HAL_UART_Receive(&huart2, dataPoll, 99, 6000);
       	//uint8_t hold = data[0];
     	HAL_Delay(300);
     }
