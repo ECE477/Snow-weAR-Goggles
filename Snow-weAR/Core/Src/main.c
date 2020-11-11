@@ -19,6 +19,7 @@
 #include "main.h"
 #include "usart.h"
 #include "gpio.h"
+#include "GPS.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -31,6 +32,9 @@ DMA_HandleTypeDef hdma_usart2_rx;
 uint8_t data[20] = {0};
 
 void SystemClock_Config(void);
+void Parse(void);
+
+GPGGA_t GPGGA;
 
 int main(void)
 {
@@ -48,11 +52,53 @@ int main(void)
 
     while (1)
     {
-    	uint8_t dataPoll[100] = {0};
-      	HAL_UART_Receive(&huart2, dataPoll, 99, 6000);
-      	//uint8_t hold = data[0];
-    	HAL_Delay(300);
+    	//uint8_t dataPoll[512] = {0};
+      	//HAL_UART_Receive(&huart2, dataPoll, 512, 800);
+      	//char* str=(char*)dataPoll;
+
+    	char* str = "$GPGGA,224359.813,4600.234,N,86023.235,W";
+    	int i = 1;
+    	while(str[i-1] != ','){
+    		i++;
+    	}
+      	GPGGA.UTC_Hour = 10*(str[i++]-48) + str[i++]-48;
+      	GPGGA.UTC_Min = 10*(str[i++]-48) + str[i++]-48;
+      	GPGGA.UTC_Sec = 10*(str[i++]-48) + str[i++]-48;
+      	if(str[i] == '.') {
+      		i++;
+      	}
+      	GPGGA.UTC_MicroSec = 100*(str[i++]-48) + 10*(str[i++]-48) + str[i++]-48;
+      	if(str[i] == ',') {
+      		i++;
+      	}
+      	while(str[i] != '.') {
+      		GPGGA.Latitude = GPGGA.Latitude*10 + str[i++]-48;
+      	}
+      	i++;
+      	while(str[i] != ',') {
+      		GPGGA.LatitudeDecimal = GPGGA.LatitudeDecimal*10 + str[i++]-48;
+      	}
+      	i++;
+      	GPGGA.NS_Indicator = str[i++];
+      	i++;
+      	while(str[i] != '.') {
+      		GPGGA.Longitude = GPGGA.Longitude*10 + str[i++]-48;
+      	}
+      	i++;
+      	while(str[i] != ','){
+      		GPGGA.LongitudeDecimal = GPGGA.LongitudeDecimal*10 + str[i++]-48;
+      	}
+      	i++;
+      	GPGGA.EW_Indicator = str[i++];
+
+      	//long oops = strtoul(str, 10, 10);
+		//sscanf(str,"$GPGGA,%2hhd%2hhd%2hhd.%3hd,%f,%c,%f,%c,%hhd,%hhd,%f,%f,%c,%hd,%s,*%2s\r\n",&GPS.GPGGA.UTC_Hour,&GPS.GPGGA.UTC_Min,&GPS.GPGGA.UTC_Sec,&GPS.GPGGA.UTC_MicroSec,&GPS.GPGGA.Latitude,&GPS.GPGGA.NS_Indicator,&GPS.GPGGA.Longitude,&GPS.GPGGA.EW_Indicator,&GPS.GPGGA.PositionFixIndicator,&GPS.GPGGA.SatellitesUsed,&GPS.GPGGA.HDOP,&GPS.GPGGA.MSL_Altitude,&GPS.GPGGA.MSL_Units,&GPS.GPGGA.AgeofDiffCorr,GPS.GPGGA.DiffRefStationID,GPS.GPGGA.CheckSum);
+		HAL_Delay(300);
     }
+}
+
+void Parse(void){
+
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
