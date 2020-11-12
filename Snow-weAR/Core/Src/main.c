@@ -27,84 +27,88 @@
 #include <string.h>
 
 UART_HandleTypeDef huart2;
-DMA_HandleTypeDef hdma_usart2_rx;
 
-uint8_t data[20] = {0};
+uint8_t data[512] = {0};
+uint8_t dataTmp = 0;
 
 void SystemClock_Config(void);
 void Parse(void);
-
-GPGGA_t GPGGA;
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
 
 int main(void)
 {
-
     HAL_Init();
     __HAL_RCC_USART2_CLK_ENABLE();
-
     SystemClock_Config();
     MX_GPIO_Init();
     MX_USART2_UART_Init();
 
-    //HAL_UART_Receive_DMA(&huart2, data, 10);
-    //HAL_UART_Receive_IT(&huart2, data, 10);
-    //uint8_t data1 = data[0];
+    //HAL_UART_Receive_IT(&huart2, dataTmp, 1);
 
     while (1)
     {
-    	uint8_t dataPoll[512] = {0};
-      	HAL_UART_Receive(&huart2, dataPoll, 512, 800);
-      	//char* str=(char*)dataPoll;
+    	//uint8_t data[512] = {0};
+      	HAL_UART_Receive(&huart2, data, 512, 800);
+      	char* str=(char*)data;
 
-    	char* str = "$GPGGA,224359.000,4025.9464,N,08654.4424,W,2,09,0.86,203.4,M,-33.8,M,0000,0000*51\r\n";
+    	//HAL_UART_Receive(&huart2, GPS.rxBuffer, 512, 800);
+    	//char* str = (char*)GPS.rxBuffer;
 
-      	if(str[0] == '$' && str[1] == 'G' && str[2] == 'P' && str[3] == 'G' && str[4] == 'G' && str[5] == 'A') {
-      		int i = 1;
-			while(str[i-1] != ','){
-				i++;
-			}
-			GPGGA.UTC_Hour = 10*(str[i++]-48) + str[i++]-48;
-			GPGGA.UTC_Min = 10*(str[i++]-48) + str[i++]-48;
-			GPGGA.UTC_Sec = 10*(str[i++]-48) + str[i++]-48;
-			if(str[i] == '.') {
-				i++;
-			}
-			GPGGA.UTC_MicroSec = 100*(str[i++]-48) + 10*(str[i++]-48) + str[i++]-48;
-			if(str[i] == ',') {
-				i++;
-			}
-
-			while(str[i] != '.') {
-				GPGGA.Latitude = GPGGA.Latitude*10 + str[i++]-48;
-			}
+    	//char* str = "$GPGGA,224359.000,4025.9464,N,08654.4424,W,2,09,0.86,203.4,M,-33.8,M,0000,0000*51\r\n";
+      	int j=0;
+      	while((str[j] != '$' || str[j+1] != 'G' || str[j+2] != 'P' || str[j+3] != 'G' || str[j+4] != 'G' || str[j+5] != 'A') && (j+1) < strlen(str))
+      		j++;
+		int i = j+7;
+		while(str[i-1] != ',')
 			i++;
-			int divFactor = 1;
-			while(str[i] != ',') {
-				GPGGA.LatitudeDecimal = GPGGA.LatitudeDecimal*10 + str[i++]-48;
-				divFactor *= 10;
-			}
-			GPGGA.Latitude = GPGGA.Latitude + GPGGA.LatitudeDecimal / divFactor;
+		GPS.GPGGA.UTC_Hour = 10*(str[i++]-48) + str[i++]-53;
+		GPS.GPGGA.UTC_Min = 10*(str[i++]-48) + str[i++]-48;
+		GPS.GPGGA.UTC_Sec = 10*(str[i++]-48) + str[i++]-48;
+		if(str[i] == '.')
+			i++;
+		GPS.GPGGA.UTC_MicroSec = 100*(str[i++]-48) + 10*(str[i++]-48) + str[i++]-48;
+		if(str[i] == ',')
+			i++;
+		while(str[i] != '.')
+			GPS.GPGGA.Latitude = GPS.GPGGA.Latitude*10 + str[i++]-48;
+		i++;
+		int divFactor = 1;
+		while(str[i] != ','){
+			GPS.GPGGA.LatitudeDecimal = GPS.GPGGA.LatitudeDecimal*10 + str[i++]-48;
+			divFactor *= 10;
+		}
+		GPS.GPGGA.Latitude = GPS.GPGGA.Latitude + GPS.GPGGA.LatitudeDecimal / divFactor;
+		i++;
+		GPS.GPGGA.NS_Indicator = str[i++];
+		i++;
+		while(str[i] != '.')
+			GPS.GPGGA.Longitude = GPS.GPGGA.Longitude*10 + str[i++]-48;
+		i++;
+		divFactor = 1;
+		while(str[i] != ',') {
+			GPS.GPGGA.LongitudeDecimal = GPS.GPGGA.LongitudeDecimal*10 + str[i++]-48;
+			divFactor *= 10;
+		}
+		GPS.GPGGA.Longitude = GPS.GPGGA.LongitudeDecimal / divFactor;
+		i++;
+		GPS.GPGGA.EW_Indicator = str[i++];
 
-			i++;
-			GPGGA.NS_Indicator = str[i++];
-			i++;
-
-			while(str[i] != '.') {
-				GPGGA.Longitude = GPGGA.Longitude*10 + str[i++]-48;
-			}
-			i++;
-			divFactor = 1;
-			while(str[i] != ','){
-				GPGGA.LongitudeDecimal = GPGGA.LongitudeDecimal*10 + str[i++]-48;
-				divFactor *= 10;
-			}
-			GPGGA.Longitude = GPGGA.Longitude + GPGGA.LongitudeDecimal / divFactor;
-			i++;
-			GPGGA.EW_Indicator = str[i++];
-
-			GPGGA.LatitudeDecimal = convertDegMinToDecDeg(GPGGA.Latitude);
-			GPGGA.LongitudeDecimal = convertDegMinToDecDeg(GPGGA.Longitude);
-      	}
+		GPS.GPGGA.LatitudeDecimal = convertDegMinToDecDeg(GPS.GPGGA.Latitude);
+		GPS.GPGGA.LongitudeDecimal = convertDegMinToDecDeg(GPS.GPGGA.Longitude);
+		int comma = 0;
+		while(comma < 4) {
+			if(str[i++] == ',')
+				comma++;
+		}
+		while(str[i] != '.')
+			GPS.GPGGA.MSL_Altitude = GPS.GPGGA.MSL_Altitude*10 + str[i++]-48;
+		int altDec = 0;
+		divFactor = 1;
+		while(str[i] != ',') {
+			altDec = altDec*10 + str[i++]-48;
+			divFactor *= 10;
+		}
+		GPS.GPGGA.MSL_Altitude = GPS.GPGGA.MSL_Altitude + altDec / divFactor;
 
     	HAL_Delay(300);
     }
@@ -115,8 +119,15 @@ void Parse(void){
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
-	HAL_UART_Receive_IT(&huart2, data, 10);
-	//HAL_UART_Receive_DMA(&huart2, data, 10);
+	/*
+	GPS.LastTime=HAL_GetTick();
+		if(GPS.rxIndex < sizeof(data)-2)
+		{
+			data[dataTmp] = dataTmp;
+			GPS.rxIndex++;
+		}
+		HAL_UART_Receive_IT(&huart2, &dataTmp, 1);
+		*/
 }
 
 void SystemClock_Config(void)
