@@ -48,6 +48,7 @@ extern GPS_t GPS;
 void	GPS_Init(void);
 void	GPS_CallBack(void);
 void	GPS_Process(void);
+double convertDegMinToDecDeg (float degMin);
 //##################################################################################################################
 
 #endif
