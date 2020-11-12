@@ -1,3 +1,4 @@
+"Core/Inc/Battery/main.o"
 "Core/Inc/SSD1306/ssd1306.o"
 "Core/Inc/SSD1306/ssd1306_fonts.o"
 "Core/Inc/SSD1306/ssd1306_tests.o"
