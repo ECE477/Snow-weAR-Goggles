@@ -26,14 +26,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-UART_HandleTypeDef huart2;
+//UART_HandleTypeDef huart2;
 
 uint8_t data[512] = {0};
-uint8_t dataTmp = 0;
+uint8_t dataTmp;
 
 void SystemClock_Config(void);
-void Parse(void);
+void GPS_Parse(void);
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
+void USART2_IRQHandler(void);
 
 int main(void)
 {
@@ -43,18 +44,22 @@ int main(void)
     MX_GPIO_Init();
     MX_USART2_UART_Init();
 
-    //HAL_UART_Receive_IT(&huart2, dataTmp, 1);
+    __disable_irq();
+    huart2.RxState= HAL_UART_STATE_READY;
+
+    __enable_irq();
+    HAL_UART_Receive_IT(&huart2, &dataTmp, 1);
 
     while (1)
     {
-    	//uint8_t data[512] = {0};
-      	HAL_UART_Receive(&huart2, data, 512, 800);
-      	char* str=(char*)data;
+      	//HAL_UART_Receive(&huart2, data, 512, 800);
+    	//GPS_Parse();
 
-    	//HAL_UART_Receive(&huart2, GPS.rxBuffer, 512, 800);
-    	//char* str = (char*)GPS.rxBuffer;
+    	/*
+    	char* str=(char*)data;
 
     	//char* str = "$GPGGA,224359.000,4025.9464,N,08654.4424,W,2,09,0.86,203.4,M,-33.8,M,0000,0000*51\r\n";
+
       	int j=0;
       	while((str[j] != '$' || str[j+1] != 'G' || str[j+2] != 'P' || str[j+3] != 'G' || str[j+4] != 'G' || str[j+5] != 'A') && (j+1) < strlen(str))
       		j++;
@@ -111,23 +116,24 @@ int main(void)
 		GPS.GPGGA.MSL_Altitude = GPS.GPGGA.MSL_Altitude + altDec / divFactor;
 
     	HAL_Delay(300);
+    	*/
     }
 }
 
-void Parse(void){
-
+void GPS_Parse(void){
+	if( (HAL_GetTick()-GPS.LastTime>50) && (GPS.rxIndex>0)) {
+		char* str = strstr((char*)data, "$GPGGA,");
+	}
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
-	/*
-	GPS.LastTime=HAL_GetTick();
-		if(GPS.rxIndex < sizeof(data)-2)
-		{
-			data[dataTmp] = dataTmp;
-			GPS.rxIndex++;
-		}
+	if (huart->Instance == USART2){
 		HAL_UART_Receive_IT(&huart2, &dataTmp, 1);
-		*/
+	}
+}
+
+void USART2_IRQHandler(void) {
+	HAL_UART_IRQHandler(&huart2);
 }
 
 void SystemClock_Config(void)
