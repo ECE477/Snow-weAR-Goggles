@@ -29,7 +29,7 @@
 //UART_HandleTypeDef huart2;
 
 uint8_t data[512] = {0};
-uint8_t dataTmp;
+uint8_t dataTmp[100] = {0};
 
 void SystemClock_Config(void);
 void GPS_Parse(void);
@@ -48,7 +48,7 @@ int main(void)
     huart2.RxState= HAL_UART_STATE_READY;
 
     __enable_irq();
-    HAL_UART_Receive_IT(&huart2, &dataTmp, 1);
+    HAL_UART_Receive_IT(&huart2, &dataTmp, 100);
 
     while (1)
     {
@@ -122,13 +122,13 @@ int main(void)
 
 void GPS_Parse(void){
 	if( (HAL_GetTick()-GPS.LastTime>50) && (GPS.rxIndex>0)) {
-		char* str = strstr((char*)data, "$GPGGA,");
+		//char* str = strstr((char*)data, "$GPGGA,");
 	}
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
 	if (huart->Instance == USART2){
-		HAL_UART_Receive_IT(&huart2, &dataTmp, 1);
+		HAL_UART_Receive_IT(&huart2, dataTmp, 100);
 	}
 }
 
