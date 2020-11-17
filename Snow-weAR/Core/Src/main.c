@@ -29,85 +29,48 @@
 #define LINEMAX 200
 
 uint8_t data[1000] = {0};
-uint8_t byte;
 int idx = 0;
 int count = 0;
 int numBytes = 0;
+int store[100] = {0};
 
-volatile char line_buffer[LINEMAX + 1];
 volatile int line_valid = 0;
 
 void SystemClock_Config(void);
 void GPS_Parse(void);
 void USART2_IRQHandler(void);
 
-int main(void)
-{
+int main(void) {
     SystemClock_Config();
     MX_GPIO_Init();
     MX_USART2_UART_Init();
 
-    while (1)
-    {
+    while (1) {
     	if(line_valid == 1) {
     		GPS_Parse();
     	}
     }
 }
 void USART2_IRQHandler(void) {
-	//byte = USART2->RDR;
-	//char rx = (char)(USART2->RDR & 0xFF);
-	//GPS.rxTmp = rx;
-
-	static char rx_buffer[LINEMAX];
-	static int rx_index = 0;
-
 	if(USART2->ISR & USART_ISR_RXNE) {
 		char rx = (char)(USART2->RDR & 0xFF);
 		data[idx++] = rx;
 
 		if(rx == '\n') {
-			idx = 0;
 			numBytes++;
-			line_valid = 1;
-		}
-/*
-		if((rx == '\r') || (rx == '\n')) {
-			if(rx_index != 0) {
-				memcpy((void*)line_buffer, rx_buffer, rx_index);
-				line_buffer[rx_index] = 0;
+			if(data[3] == 71 && data[4] == 71) {
 				line_valid = 1;
-				rx_index = 0;
+				memcpy((void*)GPS.rxBuffer, data, idx);
 			}
+			idx = 0;
 		}
-		else {
-			if((rx == '$') || (rx_index == LINEMAX)) {
-				rx_index = 0;
-				numBytes++;
-			}
-			rx_buffer[rx_index++] = rx;
-		}
-		*/
 	}
-
-	/*
-	if((GPS.rxBuffer[0] == '$' || (idx == 0 && rx == '$')) && idx < 512) {
-		data[idx] = rx;
-		GPS.rxBuffer[idx++] = rx;
-		GPS.rxIndex++;
-		count++;
-	}
-	if(idx > 511) {
-		idx = 0;
-		GPS_Parse();
-	}*/
 }
 
 void GPS_Parse(void){
 
-	char* str = (char*) data;
+	char* str = (char*) GPS.rxBuffer;
 
-	//$GPGGA,222922.000,4025.9453,N,08654.4422,W,1,06,1.27,188.5,M,-33.8,M,,*51\r\n
 	int j=0;
 	while((str[j] != '$' || str[j+1] != 'G' || str[j+2] != 'P' || str[j+3] != 'G' || str[j+4] != 'G' || str[j+5] != 'A') && (j+1) < strlen(str)) {
 		j++;
@@ -116,7 +79,14 @@ void GPS_Parse(void){
 	while(str[i-1] != ',') {
 		i++;
 	}
+	GPS.GPGGA.Latitude = 0;
+	GPS.GPGGA.LatitudeDecimal = 0;
+	GPS.GPGGA.Longitude = 0;
+	GPS.GPGGA.LongitudeDecimal = 0;
+	GPS.GPGGA.MSL_Altitude = 0;
+
 	GPS.GPGGA.UTC_Hour = 10*(str[i++]-48) + str[i++]-53;
+	store[count++] = GPS.GPGGA.UTC_Hour;
 	GPS.GPGGA.UTC_Min = 10*(str[i++]-48) + str[i++]-48;
 	GPS.GPGGA.UTC_Sec = 10*(str[i++]-48) + str[i++]-48;
 	i++;

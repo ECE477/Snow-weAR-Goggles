@@ -20,20 +20,6 @@ typedef struct {
 
 	float		MSL_Altitude;
 
-	/*
-	uint8_t		PositionFixIndicator;
-	uint8_t		SatellitesUsed;
-	float		HDOP;
-	float		MSL_Altitude;
-	char		MSL_Units;
-	float		Geoid_Separation;
-	char		Geoid_Units;
-
-	uint16_t	AgeofDiffCorr;
-	char		DiffRefStationID[4];
-	char		CheckSum[2];
-*/
-
 } GPGGA_t;
 
 typedef struct {
