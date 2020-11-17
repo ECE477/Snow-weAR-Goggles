@@ -18,7 +18,6 @@ void MX_USART2_UART_Init(void)
     {
 	  Error_Handler();
     }
-    __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
     HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(USART2_IRQn);
 

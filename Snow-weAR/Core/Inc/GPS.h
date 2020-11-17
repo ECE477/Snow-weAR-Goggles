@@ -18,6 +18,9 @@ typedef struct {
 	float		LongitudeDecimal; // changed from double
 	char		EW_Indicator;
 
+	float		MSL_Altitude;
+
+	/*
 	uint8_t		PositionFixIndicator;
 	uint8_t		SatellitesUsed;
 	float		HDOP;
@@ -29,6 +32,7 @@ typedef struct {
 	uint16_t	AgeofDiffCorr;
 	char		DiffRefStationID[4];
 	char		CheckSum[2];
+*/
 
 } GPGGA_t;
 
@@ -45,9 +49,6 @@ typedef struct {
 extern GPS_t GPS;
 
 //##################################################################################################################
-void	GPS_Init(void);
-void	GPS_CallBack(void);
-void	GPS_Process(void);
 double convertDegMinToDecDeg (float degMin);
 //##################################################################################################################
 

@@ -26,14 +26,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-uint8_t data[512] = {0};
-uint8_t dataTmp;
+#define LINEMAX 200
+
+uint8_t data[1000] = {0};
 uint8_t byte;
-int i = 0;
+int idx = 0;
+int count = 0;
+int numBytes = 0;
+
+volatile char line_buffer[LINEMAX + 1];
+volatile int line_valid = 0;
 
 void SystemClock_Config(void);
 void GPS_Parse(void);
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
 void USART2_IRQHandler(void);
 
 int main(void)
@@ -44,35 +49,85 @@ int main(void)
 
     while (1)
     {
-
+    	if(line_valid == 1) {
+    		GPS_Parse();
+    	}
     }
+}
+void USART2_IRQHandler(void) {
+	//byte = USART2->RDR;
+	//char rx = (char)(USART2->RDR & 0xFF);
+	//GPS.rxTmp = rx;
+
+	static char rx_buffer[LINEMAX];
+	static int rx_index = 0;
+
+	if(USART2->ISR & USART_ISR_RXNE) {
+		char rx = (char)(USART2->RDR & 0xFF);
+		data[idx++] = rx;
+
+		if(rx == '\n') {
+			idx = 0;
+			numBytes++;
+			line_valid = 1;
+		}
+/*
+		if((rx == '\r') || (rx == '\n')) {
+			if(rx_index != 0) {
+				memcpy((void*)line_buffer, rx_buffer, rx_index);
+				line_buffer[rx_index] = 0;
+				line_valid = 1;
+				rx_index = 0;
+			}
+		}
+		else {
+			if((rx == '$') || (rx_index == LINEMAX)) {
+				rx_index = 0;
+				numBytes++;
+			}
+			rx_buffer[rx_index++] = rx;
+		}
+		*/
+	}
+
+	/*
+	if((GPS.rxBuffer[0] == '$' || (idx == 0 && rx == '$')) && idx < 512) {
+		data[idx] = rx;
+		GPS.rxBuffer[idx++] = rx;
+		GPS.rxIndex++;
+		count++;
+	}
+	if(idx > 511) {
+		idx = 0;
+		GPS_Parse();
+	}*/
 }
 
 void GPS_Parse(void){
-	//char* str = (char*) data;
-	/*
 
-	//char* str = "$GPGGA,224359.000,4025.9464,N,08654.4424,W,2,09,0.86,203.4,M,-33.8,M,0000,0000*51\r\n";
+	char* str = (char*) data;
 
+	//$GPGGA,222922.000,4025.9453,N,08654.4422,W,1,06,1.27,188.5,M,-33.8,M,,*51\r\n
 	int j=0;
-	while((str[j] != '$' || str[j+1] != 'G' || str[j+2] != 'P' || str[j+3] != 'G' || str[j+4] != 'G' || str[j+5] != 'A') && (j+1) < strlen(str))
+	while((str[j] != '$' || str[j+1] != 'G' || str[j+2] != 'P' || str[j+3] != 'G' || str[j+4] != 'G' || str[j+5] != 'A') && (j+1) < strlen(str)) {
 		j++;
+	}
 	int i = j+7;
-	while(str[i-1] != ',')
+	while(str[i-1] != ',') {
 		i++;
+	}
 	GPS.GPGGA.UTC_Hour = 10*(str[i++]-48) + str[i++]-53;
 	GPS.GPGGA.UTC_Min = 10*(str[i++]-48) + str[i++]-48;
 	GPS.GPGGA.UTC_Sec = 10*(str[i++]-48) + str[i++]-48;
-	if(str[i] == '.')
-		i++;
+	i++;
 	GPS.GPGGA.UTC_MicroSec = 100*(str[i++]-48) + 10*(str[i++]-48) + str[i++]-48;
-	if(str[i] == ',')
-		i++;
-	while(str[i] != '.')
+	i++;
+	while(str[i] != '.') {
 		GPS.GPGGA.Latitude = GPS.GPGGA.Latitude*10 + str[i++]-48;
+	}
 	i++;
 	int divFactor = 1;
-	while(str[i] != ','){
+	while(str[i] != ',') {
 		GPS.GPGGA.LatitudeDecimal = GPS.GPGGA.LatitudeDecimal*10 + str[i++]-48;
 		divFactor *= 10;
 	}
@@ -80,54 +135,40 @@ void GPS_Parse(void){
 	i++;
 	GPS.GPGGA.NS_Indicator = str[i++];
 	i++;
-	while(str[i] != '.')
+	while(str[i] != '.') {
 		GPS.GPGGA.Longitude = GPS.GPGGA.Longitude*10 + str[i++]-48;
+	}
 	i++;
 	divFactor = 1;
 	while(str[i] != ',') {
 		GPS.GPGGA.LongitudeDecimal = GPS.GPGGA.LongitudeDecimal*10 + str[i++]-48;
 		divFactor *= 10;
 	}
-	GPS.GPGGA.Longitude = GPS.GPGGA.LongitudeDecimal / divFactor;
 	i++;
 	GPS.GPGGA.EW_Indicator = str[i++];
-
 	GPS.GPGGA.LatitudeDecimal = convertDegMinToDecDeg(GPS.GPGGA.Latitude);
 	GPS.GPGGA.LongitudeDecimal = convertDegMinToDecDeg(GPS.GPGGA.Longitude);
+
 	int comma = 0;
 	while(comma < 4) {
-		if(str[i++] == ',')
+		if(str[i++] == ',') {
 			comma++;
+		}
 	}
-	while(str[i] != '.')
+	while(str[i] != '.') {
 		GPS.GPGGA.MSL_Altitude = GPS.GPGGA.MSL_Altitude*10 + str[i++]-48;
-	int altDec = 0;
+	}
+	int altDecimal = 0;
 	divFactor = 1;
 	while(str[i] != ',') {
-		altDec = altDec*10 + str[i++]-48;
+		altDecimal = altDecimal*10 + str[i++]-48;
 		divFactor *= 10;
 	}
-	GPS.GPGGA.MSL_Altitude = GPS.GPGGA.MSL_Altitude + altDec / divFactor;
+	GPS.GPGGA.MSL_Altitude = GPS.GPGGA.MSL_Altitude + altDecimal / divFactor;
 
-	HAL_Delay(300);
-	*/
+	line_valid = 0;
 }
 
-void USART2_IRQHandler(void) {
-	byte = USART2->RDR;
-	if(data[0] == '$' || (i == 0 && byte == '$')) {
-		data[i++] = byte;
-	}
-	if(i > 511) {
-		//i = 0;
-	}
-	/*
-	if(i > 4 && (data[1] != 'G' || data[2] != 'P' || data[3] != 'G' || data[4] != 'G' || data[5] != 'A'))  {
-
-	}*/
-	return;
-	HAL_UART_IRQHandler(&huart2);
-}
 
 void SystemClock_Config(void)
 {
