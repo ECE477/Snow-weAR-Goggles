@@ -12,6 +12,10 @@ RM := rm -rf
 -include Drivers/STM32L4xx_HAL_Driver/Src/subdir.mk
 -include Core/Src/subdir.mk
 -include Core/Inc/SSD1306/subdir.mk
+<<<<<<< HEAD
+=======
+-include Core/Inc/Battery/subdir.mk
+>>>>>>> 3008e630051bb72a87972d4d69bcd70e20f50735
 -include subdir.mk
 -include objects.mk
 

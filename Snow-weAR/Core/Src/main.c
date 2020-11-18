@@ -27,16 +27,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+<<<<<<< HEAD
 #include <stdbool.h>
 #include <stdint.h>
+=======
+>>>>>>> 3008e630051bb72a87972d4d69bcd70e20f50735
 
 // OLED Libraries
 #include "../Inc/SSD1306/ssd1306.h"
 #include "../Inc/SSD1306/ssd1306_tests.h"
+<<<<<<< HEAD
 // BB Libraries
 //#include "../Inc/BQ27441.h"
 #include "../Inc/BB.h"
 #include "../Inc/IMU/IMU.h"
+=======
+
+>>>>>>> 3008e630051bb72a87972d4d69bcd70e20f50735
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -130,6 +137,7 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
+<<<<<<< HEAD
   ssd1306_Init();
   displayHomeScreen();
 
@@ -162,6 +170,21 @@ int main(void)
 
   BNO055_Init_I2C(&hi2c1);
   ssd1306_Fill(Black);
+=======
+  // Power On OLED
+  ssd1306_Init();
+  ssd1306_Fill(Black);
+  char * snow = "Snow-weAR Goggles";
+  ssd1306_SetCursor(2, 0);
+  int i;
+  for(i = 0; i < strlen(snow); i++)
+  {
+  	ssd1306_WriteChar(snow[i], Font_7x10, White);
+  	HAL_Delay(100);
+  	ssd1306_UpdateScreen();
+  }
+
+>>>>>>> 3008e630051bb72a87972d4d69bcd70e20f50735
   /* USER CODE END 2 */
 
   /* Infinite loop */

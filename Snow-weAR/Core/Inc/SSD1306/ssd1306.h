@@ -104,6 +104,7 @@ extern SPI_HandleTypeDef SSD1306_SPI_PORT;
 #define SSD1306_BUFFER_SIZE   SSD1306_WIDTH * SSD1306_HEIGHT / 8
 #endif
 
+<<<<<<< HEAD
 /*
 #ifndef SSD1306_MIRROR_HORIZ
 #define SSD1306_MIRROR_HORIZ 1
@@ -113,6 +114,8 @@ extern SPI_HandleTypeDef SSD1306_SPI_PORT;
 #ifndef SSD1306_MIRROR_VERT
 #define SSD1306_MIRROR_VERT 1
 #endif
+=======
+>>>>>>> 3008e630051bb72a87972d4d69bcd70e20f50735
 // Enumeration for screen colors
 typedef enum {
     Black = 0x00, // Black color, no pixel

@@ -1,0 +1,7 @@
+lora.c:10:6:loraTransmit	24	static
+lora.c:23:6:loraWriteFIFO	24	static
+lora.c:52:6:loraReceiveModeInit	16	static
+lora.c:63:6:loraReadFIFO	16	static
+lora.c:103:9:readReg	16	static
+lora.c:114:6:writeReg	24	static
+lora.c:124:6:LORA_INIT	8	static

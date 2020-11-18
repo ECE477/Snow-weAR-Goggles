@@ -4,9 +4,12 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+<<<<<<< HEAD
 ../Core/Src/BB.c \
 ../Core/Src/BQ27441.c \
 ../Core/Src/imu.c \
+=======
+>>>>>>> 3008e630051bb72a87972d4d69bcd70e20f50735
 ../Core/Src/main.c \
 ../Core/Src/stm32l4xx_hal_msp.c \
 ../Core/Src/stm32l4xx_it.c \
@@ -14,9 +17,12 @@ C_SRCS += \
 ../Core/Src/system_stm32l4xx.c 
 
 OBJS += \
+<<<<<<< HEAD
 ./Core/Src/BB.o \
 ./Core/Src/BQ27441.o \
 ./Core/Src/imu.o \
+=======
+>>>>>>> 3008e630051bb72a87972d4d69bcd70e20f50735
 ./Core/Src/main.o \
 ./Core/Src/stm32l4xx_hal_msp.o \
 ./Core/Src/stm32l4xx_it.o \
@@ -24,9 +30,12 @@ OBJS += \
 ./Core/Src/system_stm32l4xx.o 
 
 C_DEPS += \
+<<<<<<< HEAD
 ./Core/Src/BB.d \
 ./Core/Src/BQ27441.d \
 ./Core/Src/imu.d \
+=======
+>>>>>>> 3008e630051bb72a87972d4d69bcd70e20f50735
 ./Core/Src/main.d \
 ./Core/Src/stm32l4xx_hal_msp.d \
 ./Core/Src/stm32l4xx_it.d \
@@ -39,7 +48,11 @@ Core/Src/%.o: ../Core/Src/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: MCU GCC Compiler'
 	@echo $(PWD)
+<<<<<<< HEAD
 	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -DUSE_HAL_DRIVER -DSTM32L476xx -I"C:/Users/kenmo/OneDrive/Documents/Snow-weAR/Core/Inc" -I"C:/Users/kenmo/OneDrive/Documents/Snow-weAR/Drivers/STM32L4xx_HAL_Driver/Inc" -I"C:/Users/kenmo/OneDrive/Documents/Snow-weAR/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy" -I"C:/Users/kenmo/OneDrive/Documents/Snow-weAR/Drivers/CMSIS/Device/ST/STM32L4xx/Include" -I"C:/Users/kenmo/OneDrive/Documents/Snow-weAR/Drivers/CMSIS/Include"  -Og -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@" "$<"
+=======
+	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -DUSE_HAL_DRIVER -DSTM32L476xx -I"/home/carrie/Documents/fall-2020/ece477/Snow-weAR-Goggles/Snow-weAR/Core/Inc" -I"/home/carrie/Documents/fall-2020/ece477/Snow-weAR-Goggles/Snow-weAR/Drivers/STM32L4xx_HAL_Driver/Inc" -I"/home/carrie/Documents/fall-2020/ece477/Snow-weAR-Goggles/Snow-weAR/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy" -I"/home/carrie/Documents/fall-2020/ece477/Snow-weAR-Goggles/Snow-weAR/Drivers/CMSIS/Device/ST/STM32L4xx/Include" -I"/home/carrie/Documents/fall-2020/ece477/Snow-weAR-Goggles/Snow-weAR/Drivers/CMSIS/Include"  -Og -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@" "$<"
+>>>>>>> 3008e630051bb72a87972d4d69bcd70e20f50735
 	@echo 'Finished building: $<'
 	@echo ' '
 

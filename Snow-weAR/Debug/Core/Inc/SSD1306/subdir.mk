@@ -24,7 +24,11 @@ Core/Inc/SSD1306/%.o: ../Core/Inc/SSD1306/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: MCU GCC Compiler'
 	@echo $(PWD)
+<<<<<<< HEAD
 	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -DUSE_HAL_DRIVER -DSTM32L476xx -I"C:/Users/kenmo/OneDrive/Documents/Snow-weAR/Core/Inc" -I"C:/Users/kenmo/OneDrive/Documents/Snow-weAR/Drivers/STM32L4xx_HAL_Driver/Inc" -I"C:/Users/kenmo/OneDrive/Documents/Snow-weAR/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy" -I"C:/Users/kenmo/OneDrive/Documents/Snow-weAR/Drivers/CMSIS/Device/ST/STM32L4xx/Include" -I"C:/Users/kenmo/OneDrive/Documents/Snow-weAR/Drivers/CMSIS/Include"  -Og -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@" "$<"
+=======
+	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -DUSE_HAL_DRIVER -DSTM32L476xx -I"/home/carrie/Documents/fall-2020/ece477/Snow-weAR-Goggles/Snow-weAR/Core/Inc" -I"/home/carrie/Documents/fall-2020/ece477/Snow-weAR-Goggles/Snow-weAR/Drivers/STM32L4xx_HAL_Driver/Inc" -I"/home/carrie/Documents/fall-2020/ece477/Snow-weAR-Goggles/Snow-weAR/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy" -I"/home/carrie/Documents/fall-2020/ece477/Snow-weAR-Goggles/Snow-weAR/Drivers/CMSIS/Device/ST/STM32L4xx/Include" -I"/home/carrie/Documents/fall-2020/ece477/Snow-weAR-Goggles/Snow-weAR/Drivers/CMSIS/Include"  -Og -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@" "$<"
+>>>>>>> 3008e630051bb72a87972d4d69bcd70e20f50735
 	@echo 'Finished building: $<'
 	@echo ' '
 

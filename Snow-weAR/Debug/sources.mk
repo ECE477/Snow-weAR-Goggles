@@ -15,6 +15,10 @@ C_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
+<<<<<<< HEAD
+=======
+Core/Inc/Battery \
+>>>>>>> 3008e630051bb72a87972d4d69bcd70e20f50735
 Core/Inc/SSD1306 \
 Core/Src \
 Drivers/STM32L4xx_HAL_Driver/Src \
