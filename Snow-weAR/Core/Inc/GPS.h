@@ -26,7 +26,7 @@ typedef struct {
 	uint8_t		rxBuffer[512];
 	uint16_t	rxIndex;
 	uint8_t		rxTmp;
-	uint32_t	LastTime;
+	float		Velocity;
 
 	GPGGA_t		GPGGA;
 

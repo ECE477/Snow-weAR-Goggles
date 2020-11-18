@@ -62,6 +62,10 @@ void USART2_IRQHandler(void) {
 				line_valid = 1;
 				memcpy((void*)GPS.rxBuffer, data, idx);
 			}
+			else if(data[3] == 86 && data[4] == 84) {
+				line_valid = 1;
+				memcpy((void*)GPS.rxBuffer, data, idx);
+			}
 			idx = 0;
 		}
 	}
@@ -71,11 +75,30 @@ void GPS_Parse(void){
 
 	char* str = (char*) GPS.rxBuffer;
 
-	int j=0;
-	while((str[j] != '$' || str[j+1] != 'G' || str[j+2] != 'P' || str[j+3] != 'G' || str[j+4] != 'G' || str[j+5] != 'A') && (j+1) < strlen(str)) {
-		j++;
+	int i=7;
+	if(str[3] == 86 && str[4] == 84) {
+		int comma = 0;
+		while(comma < 6) {
+			if(str[i++] == ',') {
+				comma++;
+			}
+		}
+		GPS.Velocity = 0;
+		while(str[i] != '.') {
+			GPS.Velocity = GPS.Velocity*10 + str[i++]-48;
+		}
+		int velDecimal = 0;
+		int divFactor = 1;
+		while(str[i] != ',') {
+			//GPS.Velocity += (str[i++]-48) / divFactor;
+			velDecimal = velDecimal*10 + str[i++]-48;
+			divFactor *= 10;
+		}
+		GPS.Velocity = GPS.Velocity + velDecimal / divFactor;
+		line_valid = 0;
+		return;
 	}
-	int i = j+7;
+
 	while(str[i-1] != ',') {
 		i++;
 	}
@@ -86,9 +109,9 @@ void GPS_Parse(void){
 	GPS.GPGGA.MSL_Altitude = 0;
 
 	GPS.GPGGA.UTC_Hour = 10*(str[i++]-48) + str[i++]-53;
-	store[count++] = GPS.GPGGA.UTC_Hour;
 	GPS.GPGGA.UTC_Min = 10*(str[i++]-48) + str[i++]-48;
 	GPS.GPGGA.UTC_Sec = 10*(str[i++]-48) + str[i++]-48;
+	store[count++] = GPS.GPGGA.UTC_Sec;
 	i++;
 	GPS.GPGGA.UTC_MicroSec = 100*(str[i++]-48) + 10*(str[i++]-48) + str[i++]-48;
 	i++;
