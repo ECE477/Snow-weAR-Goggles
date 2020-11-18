@@ -18,7 +18,6 @@
   */
 #include "main.h"
 #include "usart.h"
-#include "gpio.h"
 #include "GPS.h"
 
 #include <math.h>
@@ -30,10 +29,7 @@
 
 uint8_t data[1000] = {0};
 int idx = 0;
-int count = 0;
 int numBytes = 0;
-int store[100] = {0};
-
 volatile int line_valid = 0;
 
 void SystemClock_Config(void);
@@ -48,6 +44,7 @@ int main(void) {
     while (1) {
     	if(line_valid == 1) {
     		GPS_Parse();
+    		line_valid = 0;
     	}
     }
 }
@@ -70,98 +67,6 @@ void USART2_IRQHandler(void) {
 		}
 	}
 }
-
-void GPS_Parse(void){
-
-	char* str = (char*) GPS.rxBuffer;
-
-	int i=7;
-	if(str[3] == 86 && str[4] == 84) {
-		int comma = 0;
-		while(comma < 6) {
-			if(str[i++] == ',') {
-				comma++;
-			}
-		}
-		GPS.Velocity = 0;
-		while(str[i] != '.') {
-			GPS.Velocity = GPS.Velocity*10 + str[i++]-48;
-		}
-		int velDecimal = 0;
-		int divFactor = 1;
-		while(str[i] != ',') {
-			//GPS.Velocity += (str[i++]-48) / divFactor;
-			velDecimal = velDecimal*10 + str[i++]-48;
-			divFactor *= 10;
-		}
-		GPS.Velocity = GPS.Velocity + velDecimal / divFactor;
-		line_valid = 0;
-		return;
-	}
-
-	while(str[i-1] != ',') {
-		i++;
-	}
-	GPS.GPGGA.Latitude = 0;
-	GPS.GPGGA.LatitudeDecimal = 0;
-	GPS.GPGGA.Longitude = 0;
-	GPS.GPGGA.LongitudeDecimal = 0;
-	GPS.GPGGA.MSL_Altitude = 0;
-
-	GPS.GPGGA.UTC_Hour = 10*(str[i++]-48) + str[i++]-53;
-	GPS.GPGGA.UTC_Min = 10*(str[i++]-48) + str[i++]-48;
-	GPS.GPGGA.UTC_Sec = 10*(str[i++]-48) + str[i++]-48;
-	store[count++] = GPS.GPGGA.UTC_Sec;
-	i++;
-	GPS.GPGGA.UTC_MicroSec = 100*(str[i++]-48) + 10*(str[i++]-48) + str[i++]-48;
-	i++;
-	while(str[i] != '.') {
-		GPS.GPGGA.Latitude = GPS.GPGGA.Latitude*10 + str[i++]-48;
-	}
-	i++;
-	int divFactor = 1;
-	while(str[i] != ',') {
-		GPS.GPGGA.LatitudeDecimal = GPS.GPGGA.LatitudeDecimal*10 + str[i++]-48;
-		divFactor *= 10;
-	}
-	GPS.GPGGA.Latitude = GPS.GPGGA.Latitude + GPS.GPGGA.LatitudeDecimal / divFactor;
-	i++;
-	GPS.GPGGA.NS_Indicator = str[i++];
-	i++;
-	while(str[i] != '.') {
-		GPS.GPGGA.Longitude = GPS.GPGGA.Longitude*10 + str[i++]-48;
-	}
-	i++;
-	divFactor = 1;
-	while(str[i] != ',') {
-		GPS.GPGGA.LongitudeDecimal = GPS.GPGGA.LongitudeDecimal*10 + str[i++]-48;
-		divFactor *= 10;
-	}
-	i++;
-	GPS.GPGGA.EW_Indicator = str[i++];
-	GPS.GPGGA.LatitudeDecimal = convertDegMinToDecDeg(GPS.GPGGA.Latitude);
-	GPS.GPGGA.LongitudeDecimal = convertDegMinToDecDeg(GPS.GPGGA.Longitude);
-
-	int comma = 0;
-	while(comma < 4) {
-		if(str[i++] == ',') {
-			comma++;
-		}
-	}
-	while(str[i] != '.') {
-		GPS.GPGGA.MSL_Altitude = GPS.GPGGA.MSL_Altitude*10 + str[i++]-48;
-	}
-	int altDecimal = 0;
-	divFactor = 1;
-	while(str[i] != ',') {
-		altDecimal = altDecimal*10 + str[i++]-48;
-		divFactor *= 10;
-	}
-	GPS.GPGGA.MSL_Altitude = GPS.GPGGA.MSL_Altitude + altDecimal / divFactor;
-
-	line_valid = 0;
-}
-
 
 void SystemClock_Config(void)
 {
