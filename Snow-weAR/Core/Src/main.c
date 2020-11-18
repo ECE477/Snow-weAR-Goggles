@@ -1,21 +1,7 @@
 /* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
-  ******************************************************************************
-  */
+
+//Current Purpose of this main.c: OLED displays
+
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -35,7 +21,7 @@
 #include "../Inc/SSD1306/ssd1306_tests.h"
 // BB Libraries
 //#include "../Inc/BQ27441.h"
-#include "../Inc/BB.h"
+//#include "../Inc/BB.h"
 #include "../Inc/IMU/IMU.h"
 /* USER CODE END Includes */
 
@@ -46,9 +32,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define BB_I2C_ADDRESS 0x55
-#define BB_COMMAND_REM_CAPACITY	0x0C // RemainingCapacity()
-#define BQ72441_I2C_TIMEOUT 2000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -60,9 +43,7 @@
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
 I2C_HandleTypeDef hi2c3;
-
 SPI_HandleTypeDef hspi1;
-
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
@@ -95,13 +76,10 @@ void zeroStats(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  uint8_t		imu_readings[IMU_NUMBER_OF_BYTES];
-  int16_t 	accel_data[3];
-  float		acc_x, acc_y, acc_z;
-  float		velocityX,velocityY,velocityZ,lastVelocityX,lastVelocityY,lastVelocityZ;
-  float		XYZvelocity = 0;
-  float 	XYZvelocityPerSecond[10] = {0,0,0,0,0,0,0,0,0,0};
-  int 		XYZvelocity_Index = 0;
+	int *accel;
+	int V[2] = {0,0};
+	int V_last[2] = {0,0};
+
 
   /* USER CODE END 1 */
 
@@ -135,30 +113,6 @@ int main(void)
 
   ssd1306_Fill(Black);
   ssd1306_UpdateScreen();
-  //BQ27441_Init(&bb);
-  BB_Init();
-  bool check;
-  check = BB_begin(&hi2c1);
-  int x = 0;
-  //check = BQ27441_begin(&hi2c1);
-
-  ssd1306_SetCursor(4, 5);
-  /*char connected[5];
-  sprintf(connected, "%d", check);
-  ssd1306_WriteString(connected, Font_7x10, White);
-  ssd1306_UpdateScreen();*/
-  if(check)
-  {
-	  char connected[9] = "Connected to BB";
-	  ssd1306_WriteString(connected, Font_7x10, White);
-	  ssd1306_UpdateScreen();
-  }
-  else
-  {
-	  char err[14] = "Cannot Connect to BB";
-	  ssd1306_WriteString(err, Font_7x10, White);
-	  ssd1306_UpdateScreen();
-  }
 
   BNO055_Init_I2C(&hi2c1);
   ssd1306_Fill(Black);
@@ -166,121 +120,30 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+  while (1) {
     /* USER CODE END WHILE */
     /* USER CODE BEGIN 3 */
 
-	//IMU Acceleration
-	//TODO Convert to tinyINT or uint_16
-    GetAccelData(&hi2c1, (uint8_t*)imu_readings);
-	accel_data[0] = (((int16_t)((uint8_t *)(imu_readings))[1] << 8) | ((uint8_t *)(imu_readings))[0]);
-	accel_data[1] = (((int16_t)((uint8_t *)(imu_readings))[3] << 8) | ((uint8_t *)(imu_readings))[2]);
-	accel_data[2] = (((int16_t)((uint8_t *)(imu_readings))[5] << 8) | ((uint8_t *)(imu_readings))[4]);
-	acc_x = ((float)(accel_data[0]))/100.0f; // m per s^2
-	acc_y = ((float)(accel_data[1]))/100.0f; // m per s^2
-	acc_z = ((float)(accel_data[2]))/100.0f; // m per s^2
+	//IMU: V is a two element array holding whole number and decimal value
+	accel = getAcceleration();
+	V[0] = V_last[0] + accel[0];
+	V[1] = V_last[1] + accel[1];
 
-	//IMU Velocity
-	/*
-	if(acc_x <= 1 && acc_x >= -1)
-		acc_x = 0.0;
-	if(acc_y <= 1 && acc_y >= -1)
-		acc_y = 0.0;
-	if((acc_z - 9.8) <= 1 && (acc_z - 9.8) >= -1)
-		acc_z = 9.8;
-	*/
+	//TEST
+	V[0] = accel[0];
+	V[1] = accel[1];
 
-	velocityX = lastVelocityX + ((int)acc_x * .1); lastVelocityX = velocityX;
-	velocityY = lastVelocityY + ((int)acc_y * .1); lastVelocityY = velocityY;
-	velocityZ = lastVelocityZ + ((int)(acc_z - 9.8) * .1); lastVelocityZ = velocityZ;
+	char speed[30];
+	sprintf(speed, "X: %d.%d Km/h", V[0], V[1]);
 
+	//IMU: Update V_last
+	V_last[0] = V[0];
+    V_last[1] = V[1];
 
-	//IMU XYZ Velocity
-	XYZvelocityPerSecond[XYZvelocity_Index] = sqrtf((velocityX*velocityX)+(velocityY*velocityY)+(velocityZ*velocityZ)); //((V_x^2 + V_y^2 + V_z^2))^0.5
-
-
-
-	char x_str[30];
-	char y_str[30];
-	char z_str[30];
-	sprintf(x_str, "X: %d.%d", (int)(acc_x), abs((int)((acc_x - (int)acc_x)*100)));
-	sprintf(y_str, "Y: %d.%d", (int)(acc_y), abs((int)((acc_y - (int)acc_y)*100)));
-	sprintf(z_str, "Z: %d.%d", (int)(acc_z), abs((int)((acc_z - (int)acc_z)*100)));
-	//ssd1306_Fill(Black);
 	ssd1306_SetCursor(4, 5);
-	ssd1306_WriteString(x_str, Font_6x8, White);
+	ssd1306_WriteString(speed, Font_6x8, White);
 	ssd1306_SetCursor(4, 20);
-	ssd1306_WriteString(y_str, Font_6x8, White);
-	ssd1306_SetCursor(4, 35);
-	ssd1306_WriteString(z_str, Font_6x8, White);
-	//ssd1306_UpdateScreen();
-	/*
-	ssd1306_SetCursor(4, 20);
-	uint16_t current = BB_current(&hi2c1, 0);
-	char curr_str[30];
-	sprintf(curr_str, "Current: %dmA        ", current);
-	ssd1306_WriteString(curr_str, Font_6x8, White);
-	*/
-	/*
-	bool cap_check = setCap(&hi2c1, 2500);
-	uint16_t cap = readCapacity(&hi2c1, 8);
-	char cap_str[30];
-	sprintf(cap_str, "Max Cap: %dmAh ", cap);
-	ssd1306_WriteString(cap_str, Font_6x8, White);
-	*/
 
-	/*
-	ssd1306_SetCursor(4, 35);
-	uint16_t cap2 = readCapacity(&hi2c1, 0);
-	char cap_str2[30];
-	sprintf(cap_str2, "Curr. Cap: %dmAh ", cap2);
-	ssd1306_WriteString(cap_str2, Font_6x8, White);
-
-	ssd1306_SetCursor(4, 50);
-	uint16_t soc = BB_soc(&hi2c1, 0);
-	char soc_str[30];
-	sprintf(soc_str, "Charge: %d%% ", soc);
-	ssd1306_WriteString(soc_str, Font_7x10, White);
-
-	//ssd1306_UpdateScreen();
-
-	//HAL_Delay(3000);
-
-	ssd1306_SetCursor(4, 20);
-	uint16_t volt = readVoltage(&hi2c1);
-	char volt_str[15];
-	sprintf(volt_str, "Batt Volt: %d.%dV",volt/1000, volt-(1000* (volt/1000)));
-	ssd1306_WriteString(volt_str, Font_6x8, White);
-
-	ssd1306_SetCursor(4, 35);
-	uint16_t temp = readTemp(&hi2c1);
-	char temp_str[15];
-	sprintf(temp_str, "Temp: %d degrees F",temp);
-	ssd1306_WriteString(temp_str, Font_6x8, White); */
-
-	//ssd1306_UpdateScreen();
-
-	//IMU Velocity Calculation and Index Reset
-	if(XYZvelocity_Index == 9){
-
-		//Calculate Sum of Array of Length 10
-		while(XYZvelocity_Index >= 0){
-			XYZvelocity += XYZvelocityPerSecond[XYZvelocity_Index];
-			XYZvelocity_Index--;
-		}
-		char xyz_str[30];
-		ssd1306_SetCursor(4, 50);
-		XYZvelocity /= 10;
-		sprintf(xyz_str, "XYZVel: %d.%d", (int)(XYZvelocity), abs((int)((XYZvelocity - (int)XYZvelocity)*100)));
-		ssd1306_WriteString(xyz_str, Font_6x8, White);
-		XYZvelocity_Index = -1;
-		ssd1306_UpdateScreen();
-	}
-
-	XYZvelocity_Index++;
-	HAL_Delay(100);
-  }
   /* USER CODE END 3 */
 }
 
@@ -288,8 +151,7 @@ int main(void)
   * @brief System Clock Configuration
   * @retval None
   */
-void SystemClock_Config(void)
-{
+void SystemClock_Config(void) {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
@@ -342,7 +204,6 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 }
-
 /**
   * @brief I2C1 Initialization Function
   * @param None
