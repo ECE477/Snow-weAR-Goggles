@@ -17,17 +17,19 @@
   ******************************************************************************
   */
 #include "main.h"
+
+#include "../Inc/SSD1306/ssd1306.h"
+#include "../Inc/SSD1306/ssd1306_tests.h"
 #include "../Inc/GPS/usart.h"
 #include "../Inc/GPS/GPS.h"
+#include "../Inc/BB.h"
 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define LINEMAX 200
-
-uint8_t data[1000] = {0};
+uint8_t data[512] = {0};
 int idx = 0;
 int numBytes = 0;
 volatile int line_valid = 0;
@@ -48,6 +50,7 @@ int main(void) {
     	}
     }
 }
+
 void USART2_IRQHandler(void) {
 	if(USART2->ISR & USART_ISR_RXNE) {
 		char rx = (char)(USART2->RDR & 0xFF);
