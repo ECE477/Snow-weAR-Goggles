@@ -53,7 +53,6 @@ const char read_calib[2] 	= {REG_READ, BNO055_CALIB_STAT};
 const char reset_sensor[3]	= {REG_WRITE, BNO055_SYS_TRIGGER, 0x01 << 5};
 uint8_t get_readings[1] 	= {BNO055_ACC_DATA_X_LSB};
 
-
 // Configure BNO sensor
 void BNO055_Init_I2C(I2C_HandleTypeDef* hi2c_device) {
 	// Select BNO055 config mode
@@ -117,6 +116,65 @@ void BNO055_Init_I2C(I2C_HandleTypeDef* hi2c_device) {
 	HAL_Delay(50);
 }
 
+int * getAcceleration(void) {
+	//TIME IS INCLUDED IN THIS CALC
+
+	static int *accelMag[2];
+	int *accelXYZ = getTrueAccelerationXYZ();
+
+	accelMag[0] = (int)sqrt(pow(accelXYZ[0],2) + pow(accelXYZ[2],2) + pow(accelXYZ[4],2));
+	accelMag[1] = (int)sqrt(pow(accelXYZ[1],2) + pow(accelXYZ[3],2) + pow(accelXYZ[5],2));
+
+	return accelMag;
+}
+
+
+//TODO Convert to tinyINT(int16_t) or uint_16
+int * getTrueAccelerationXYZ(void) {
+
+	uint8_t	imu_readings[IMU_NUMBER_OF_BYTES];
+	int16_t accel_data[3];
+
+	static int accelXYZ[6];
+
+	//Get All Accel Data and Parse into an array
+    GetAccelData(&hi2c1, (uint8_t*)imu_readings);
+
+	accel_data[0] = (((int16_t)((uint8_t *)(imu_readings))[1] << 8) | ((uint8_t *)(imu_readings))[0]);
+	accel_data[1] = (((int16_t)((uint8_t *)(imu_readings))[3] << 8) | ((uint8_t *)(imu_readings))[2]);
+	accel_data[2] = (((int16_t)((uint8_t *)(imu_readings))[5] << 8) | ((uint8_t *)(imu_readings))[4]);
+
+	float acc_x = ((float)(accel_data[0]))/100.0f; // m per s^2
+	float acc_y = ((float)(accel_data[1]))/100.0f; // m per s^2
+	float acc_z = ((float)(accel_data[2]))/100.0f; // m per s^2
+
+	accelXYZ[0] = (int)(acc_x);
+	accelXYZ[1] = abs((int)((acc_x - (int)acc_x)*100));
+	accelXYZ[2] = (int)(acc_y);
+	accelXYZ[3] = abs((int)((acc_y - (int)acc_y)*100));
+	accelXYZ[4] = (int)(acc_z);
+	accelXYZ[5] = abs((int)((acc_z - (int)acc_z)*100));
+
+	return accelXYZ;
+}
+
+int * getQuats(void){
+
+//	uint8_t	imu_readings[IMU_NUMBER_OF_BYTES];
+//	GetQuatData(&hi2c1, (uint8_t*)imu_readings);
+
+	//https://github.com/adafruit/Adafruit_BNO055/blob/3f66fd8d0aa57ee8f487498d6c4de837c62bd7e2/Adafruit_BNO055.cpp
+	static int quats[3] = {1,2,3};
+
+	return quats;
+}
+
+// Send data to BNO055 over I2C
+uint8_t GetQuatData(I2C_HandleTypeDef* hi2c_device, uint8_t* str) {
+	uint8_t status;
+	status = HAL_I2C_Mem_Read(hi2c_device, BNO055_I2C_ADDR_LO<<1, BNO055_ACC_DATA_X_LSB, I2C_MEMADD_SIZE_8BIT, str, IMU_NUMBER_OF_BYTES,100);
+	return status;
+}
 
 
 // Send data to BNO055 over I2C
@@ -126,16 +184,6 @@ uint8_t GetAccelData(I2C_HandleTypeDef* hi2c_device, uint8_t* str) {
   //while (HAL_I2C_GetState(hi2c_device) != HAL_I2C_STATE_READY) {}
 	return status;
 }
-
-
-// TBD
-/*void readAccelData(int16_t *destination) {
-  uint8_t rawData[6];  // x/y/z accel register data stored here
-  destination[0] = ((int16_t)rawData[1] << 8) | rawData[0] ;      // Turn the MSB and LSB into a signed 16-bit value
-  destination[1] = ((int16_t)rawData[3] << 8) | rawData[2] ;
-  destination[2] = ((int16_t)rawData[5] << 8) | rawData[4] ;
-}*/
-
 
 // TBD
 uint8_t GetAccelChipId(I2C_HandleTypeDef* hi2c_device, uint8_t *chip_id) {
