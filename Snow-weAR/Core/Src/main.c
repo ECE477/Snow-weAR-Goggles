@@ -17,8 +17,8 @@
   ******************************************************************************
   */
 #include "main.h"
-#include "usart.h"
-#include "GPS.h"
+#include "../Inc/GPS/usart.h"
+#include "../Inc/GPS/GPS.h"
 
 #include <math.h>
 #include <stdio.h>

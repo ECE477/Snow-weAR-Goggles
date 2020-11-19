@@ -1,4 +1,4 @@
-#include "usart.h"
+#include "../Inc/GPS/usart.h"
 
 UART_HandleTypeDef huart2;
 

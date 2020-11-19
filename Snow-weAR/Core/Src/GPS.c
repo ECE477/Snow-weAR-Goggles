@@ -1,5 +1,5 @@
-#include "GPS.h"
-#include "usart.h"
+#include "../Inc/GPS/GPS.h"
+#include "../Inc/GPS/usart.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
