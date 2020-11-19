@@ -27,37 +27,10 @@
 extern "C" {
 #endif
 
-/* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
-/* Exported types ------------------------------------------------------------*/
-/* USER CODE BEGIN ET */
-
-/* USER CODE END ET */
-
-/* Exported constants --------------------------------------------------------*/
-/* USER CODE BEGIN EC */
-
-/* USER CODE END EC */
-
-/* Exported macro ------------------------------------------------------------*/
-/* USER CODE BEGIN EM */
-
-/* USER CODE END EM */
-
-/* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
-/* USER CODE BEGIN EFP */
-
-/* USER CODE END EFP */
-
-/* Private defines -----------------------------------------------------------*/
 #define BB_GPOUT_Pin GPIO_PIN_0
 #define BB_GPOUT_GPIO_Port GPIOH
 #define BB_CE_Pin GPIO_PIN_1
@@ -66,12 +39,15 @@ void Error_Handler(void);
 #define BB_SYSOFF_GPIO_Port GPIOA
 #define session_btn_Pin GPIO_PIN_1
 #define session_btn_GPIO_Port GPIOA
+#define session_btn_EXTI_IRQn EXTI1_IRQn
 #define radio_btn_Pin GPIO_PIN_2
 #define radio_btn_GPIO_Port GPIOA
-#define LoRa_nRST_Pin GPIO_PIN_3
-#define LoRa_nRST_GPIO_Port GPIOA
+#define GPS_Rx_Pin GPIO_PIN_3
+#define GPS_Rx_GPIO_Port GPIOA
 #define CS_LoRa_Pin GPIO_PIN_4
 #define CS_LoRa_GPIO_Port GPIOA
+#define LED_Pin GPIO_PIN_2
+#define LED_GPIO_Port GPIOB
 #define IMU_ADDR_Pin GPIO_PIN_12
 #define IMU_ADDR_GPIO_Port GPIOE
 #define IMU_INT_Pin GPIO_PIN_13
@@ -84,9 +60,6 @@ void Error_Handler(void);
 #define GPSReg_ERR_GPIO_Port GPIOC
 #define GPSReg_Pwr_Pin GPIO_PIN_8
 #define GPSReg_Pwr_GPIO_Port GPIOC
-/* USER CODE BEGIN Private defines */
-
-/* USER CODE END Private defines */
 
 #ifdef __cplusplus
 }
