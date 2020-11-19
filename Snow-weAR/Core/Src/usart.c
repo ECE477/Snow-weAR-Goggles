@@ -2,8 +2,7 @@
 
 UART_HandleTypeDef huart2;
 
-void MX_GPIO_Init(void)
-{
+void MX_GPIO_Init_USART(void) {
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -19,8 +18,7 @@ void MX_GPIO_Init(void)
 
 }
 
-void MX_USART2_UART_Init(void)
-{
+void MX_USART2_UART_Init(void) {
 	huart2.Instance = USART2;
 	huart2.Init.BaudRate = 9600;
 	huart2.Init.WordLength = UART_WORDLENGTH_8B;
