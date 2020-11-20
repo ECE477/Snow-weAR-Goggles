@@ -16,14 +16,16 @@ typedef struct {
 	uint8_t		UTC_MicroSec;
 
 	float 		Latitude;
-	float		LatitudeDecimal;
+	float		LatDec;
 	char		NS_Indicator;
 	float		Longitude;
-	float		LongitudeDecimal;
+	float		LonDec;
 	char		EW_Indicator;
 	float 		MSL_Altitude;
 
 	float		Velocity;
+
+	char		str[11];
 
 } GPS_t;
 
@@ -32,6 +34,7 @@ extern GPS_t GPS;
 //##################################################################################################################
 double convertDegMinToDecDeg (float degMin);
 void GPS_Parse(void);
+void GPS_String(void);
 //##################################################################################################################
 
 #endif

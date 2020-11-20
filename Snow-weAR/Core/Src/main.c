@@ -22,6 +22,7 @@
 #include "../Inc/SSD1306/ssd1306_tests.h"
 #include "../Inc/GPS/usart.h"
 #include "../Inc/GPS/GPS.h"
+#include "../Inc/IMU/IMU.h"
 #include "../Inc/BB.h"
 
 #include <math.h>
@@ -30,6 +31,10 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
+
+#define BB_I2C_ADDRESS 0x55
+#define BB_COMMAND_REM_CAPACITY	0x0C
+#define BQ72441_I2C_TIMEOUT 2000
 
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
@@ -58,10 +63,10 @@ int main(void) {
 	HAL_Init();
 
     SystemClock_Config();
+    MX_GPIO_Init();
     MX_I2C1_Init();
     MX_I2C2_Init();
     MX_I2C3_Init();
-    MX_GPIO_Init();
 
     MX_GPIO_Init_USART();
     MX_USART2_UART_Init();
@@ -189,10 +194,53 @@ void session(void) {
 		}
 
 		// Read IMU
+
 		// Read GPS
+		char lat_str[15];
+		char lon_str[15];
+		sprintf(lat_str, "%2d.%2d %c", (int)GPS.LatDec, (int)((GPS.LatDec-(int)GPS.LatDec)*100), GPS.NS_Indicator);
+		ssd1306_SetCursor(4, 10);
+		ssd1306_WriteString(lat_str, Font_7x10, White);
+		ssd1306_SetCursor(4, 20);
+		sprintf(lon_str, "%2d.%2d %c", (int)GPS.LonDec, (int)((GPS.LonDec-(int)GPS.LonDec)*100), GPS.EW_Indicator);
+		ssd1306_WriteString(lon_str, Font_7x10, White);
+		ssd1306_SetCursor(4, 30);
+		GPS_String();
+		ssd1306_WriteString(GPS.str, Font_7x10, White);
+
 		// Update Screen
 		ssd1306_UpdateScreen();
 	}
+	return;
+}
+
+void zeroStats(void) {
+	ssd1306_Fill(Black);
+	ssd1306_SetCursor(4, 10);
+	ssd1306_WriteString("00.0", Font_11x18, White);
+	ssd1306_WriteString("kmh", Font_6x8, White);
+
+	ssd1306_SetCursor(83, 15);
+	char temp_str[15];
+	sprintf(temp_str, "%02d.%1d F", 0, 0);
+	ssd1306_WriteString(temp_str, Font_7x10, White);
+	ssd1306_DrawCircle(115, 15, 1, White);
+
+
+	ssd1306_DrawCircle(5, 54, 2, White);
+	ssd1306_DrawArc(5, 60, 4, 90, 270, White);
+	ssd1306_SetCursor(14, 54);
+	char gps_str[20];
+	sprintf(gps_str, "%02dN %02dW %02dU", 0, 0, 0);
+	ssd1306_WriteString(gps_str, Font_6x8, White);
+
+	ssd1306_SetCursor(100, 54);
+	uint16_t soc = BB_soc(&hi2c1, 0);
+	char soc_str[30];
+	sprintf(soc_str, "%3d%% ", soc);
+	ssd1306_WriteString(soc_str, Font_6x8, White);
+
+	ssd1306_UpdateScreen();
 	return;
 }
 

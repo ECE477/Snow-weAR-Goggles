@@ -14,8 +14,7 @@ int store[100] = {0};
 int count = 0;
 
 //##################################################################################################################
-double convertDegMinToDecDeg (float degMin)
-{
+double convertDegMinToDecDeg (float degMin) {
   double min = 0.0;
   double decDeg = 0.0;
 
@@ -29,7 +28,7 @@ double convertDegMinToDecDeg (float degMin)
   return decDeg;
 }
 
-void GPS_Parse(void){
+void GPS_Parse(void) {
 
 	char* str = (char*) GPS.rxBuffer;
 
@@ -60,9 +59,9 @@ void GPS_Parse(void){
 		i++;
 	}
 	GPS.Latitude = 0;
-	GPS.LatitudeDecimal = 0;
+	GPS.LatDec = 0;
 	GPS.Longitude = 0;
-	GPS.LongitudeDecimal = 0;
+	GPS.LonDec = 0;
 	GPS.MSL_Altitude = 0;
 
 	GPS.UTC_Hour = 10*(str[i++]-48) + str[i++]-53;
@@ -78,10 +77,10 @@ void GPS_Parse(void){
 	i++;
 	int divFactor = 1;
 	while(str[i] != ',') {
-		GPS.LatitudeDecimal = GPS.LatitudeDecimal*10 + str[i++]-48;
+		GPS.LatDec = GPS.LatDec*10 + str[i++]-48;
 		divFactor *= 10;
 	}
-	GPS.Latitude = GPS.Latitude + GPS.LatitudeDecimal / divFactor;
+	GPS.Latitude = GPS.Latitude + GPS.LatDec / divFactor;
 	i++;
 	GPS.NS_Indicator = str[i++];
 	i++;
@@ -91,13 +90,13 @@ void GPS_Parse(void){
 	i++;
 	divFactor = 1;
 	while(str[i] != ',') {
-		GPS.LongitudeDecimal = GPS.LongitudeDecimal*10 + str[i++]-48;
+		GPS.LonDec = GPS.LonDec*10 + str[i++]-48;
 		divFactor *= 10;
 	}
 	i++;
 	GPS.EW_Indicator = str[i++];
-	GPS.LatitudeDecimal = convertDegMinToDecDeg(GPS.Latitude);
-	GPS.LongitudeDecimal = convertDegMinToDecDeg(GPS.Longitude);
+	GPS.LatDec = convertDegMinToDecDeg(GPS.Latitude);
+	GPS.LonDec = convertDegMinToDecDeg(GPS.Longitude);
 
 	int comma = 0;
 	while(comma < 4) {
@@ -115,6 +114,10 @@ void GPS_Parse(void){
 		divFactor *= 10;
 	}
 	GPS.MSL_Altitude = GPS.MSL_Altitude + altDecimal / divFactor;
+}
+
+void GPS_String(void) {
+	sprintf(GPS.str, "%2d%2d%c%2d%2d%c", (int)GPS.LatDec, (int)((GPS.LatDec-(int)GPS.LatDec)*100), GPS.NS_Indicator, (int)GPS.LonDec, (int)((GPS.LonDec-(int)GPS.LonDec)*100), GPS.EW_Indicator);
 }
 
 //##################################################################################################################
