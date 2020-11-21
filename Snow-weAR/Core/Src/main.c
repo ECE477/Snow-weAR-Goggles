@@ -24,6 +24,7 @@
 #include "../Inc/GPS/GPS.h"
 #include "../Inc/IMU/IMU.h"
 #include "../Inc/BB.h"
+#include "../Inc/LoRa.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -51,6 +52,8 @@ static void MX_I2C1_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_I2C3_Init(void);
+static void SPI1_Init(void);
+uint8_t readReg(uint8_t addr);
 
 void USART2_IRQHandler(void);
 
@@ -64,25 +67,43 @@ int main(void) {
 
     SystemClock_Config();
     MX_GPIO_Init();
-    MX_I2C1_Init();
-    MX_I2C2_Init();
-    MX_I2C3_Init();
 
-    MX_GPIO_Init_USART();
-    MX_USART2_UART_Init();
+    if(!DEV){
+    	MX_I2C1_Init();
+		MX_I2C2_Init();
+		MX_I2C3_Init();
+		MX_GPIO_Init_USART();
+		MX_USART2_UART_Init();
+		state = 1;
+		ssd1306_Init();
+		while (1) {
+			if(state == 1) {
+				displayHomeScreen();
+				state = -1;
+			}else if(state == 2) {
+				session();
+			}
+		}
+    }
+    else{
+    	MX_I2C1_Init();
+		MX_I2C2_Init();
+		MX_I2C3_Init();
+		MX_GPIO_Init_USART();
+		MX_USART2_UART_Init();
+    	SPI1_Init();
+    	LoRa_Init();
+    	uint8_t pack[] = "Snow-weAR";
+    	loraTransmitCopy(pack, 9);
+		state = 1;
+		//ssd1306_Init();
+		 HAL_NVIC_SetPriority(RXDone_EXTI_IRQn, 1, 2);
+		 HAL_NVIC_EnableIRQ(RXDone_EXTI_IRQn);
+		loraReceiveModeInit();
 
-    state = 1;
-    ssd1306_Init();
+    	while(1){
 
-    while (1) {
-    	if(state == 1) {
-    		displayHomeScreen();
-    		state = -1;
     	}
-    	else if(state == 2) {
-    		session();
-    	}
-
     }
 }
 
@@ -247,28 +268,40 @@ void zeroStats(void) {
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   /* EXTI line interrupt detected */
 	//HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-  int session_btn_val = HAL_GPIO_ReadPin(session_btn_GPIO_Port, session_btn_Pin);
-  if(session_btn_val) {
-	int sess_ok = sessionStart();
-	if(sess_ok == HAL_OK) {
-		zeroStats();
-		state = 2; // In Session
-	}
-	else {
-		ssd1306_SetCursor(4, 20);
+  if(GPIO_Pin == session_btn_Pin){
+	  int session_btn_val = HAL_GPIO_ReadPin(session_btn_GPIO_Port, session_btn_Pin);
+	  if(session_btn_val) {
+		int sess_ok = sessionStart();
+		if(sess_ok == HAL_OK) {
+			zeroStats();
+			state = 2; // In Session
+		}
+		else {
+			ssd1306_SetCursor(4, 20);
+			ssd1306_Fill(Black);
+			ssd1306_WriteString("Unable to Connect", Font_7x10, White);
+			ssd1306_SetCursor(4, 30);
+			ssd1306_WriteString("to all Sensors", Font_7x10, White);
+			ssd1306_UpdateScreen();
+			state = 0; //Error
+			return;
+		}
+	  }
+	  else {
 		ssd1306_Fill(Black);
-		ssd1306_WriteString("Unable to Connect", Font_7x10, White);
-		ssd1306_SetCursor(4, 30);
-		ssd1306_WriteString("to all Sensors", Font_7x10, White);
 		ssd1306_UpdateScreen();
-		state = 0; //Error
-		return;
-	}
+		state = 1; //Home
+	  }
   }
-  else {
-	ssd1306_Fill(Black);
-	ssd1306_UpdateScreen();
-	state = 1; //Home
+  if(GPIO_Pin == GPIO_PIN_3){
+	if(HAL_GPIO_ReadPin(RXDone_GPIO_Port, RXDone_Pin)){
+		HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, GPIO_PIN_SET);
+		//HAL_Delay(100);
+		HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, GPIO_PIN_RESET);
+		// get packet length
+		uint8_t buf[20];
+		loraReceiveGPSData(buf);
+	}
   }
   return;
 }
@@ -284,77 +317,118 @@ static void MX_GPIO_Init(void) {
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOH, BB_GPOUT_Pin|BB_CE_Pin, GPIO_PIN_RESET);
+  if(DEV){
+	  HAL_GPIO_WritePin(LORA_GPIO_Port, LORA_NSS_Pin, GPIO_PIN_SET);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, BB_SYSOFF_Pin|CS_LoRa_Pin, GPIO_PIN_RESET);
+	  /*Configure GPIO pin Output Level */
+	  HAL_GPIO_WritePin(LORA_GPIO_Port, LORA_RST_Pin, GPIO_PIN_SET);
+	  HAL_GPIO_WritePin(RXDone_GPIO_Port, RXDone_Pin, GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+	  /*Configure GPIO pin : LORA_NSS_Pin */
+	  GPIO_InitStruct.Pin = LORA_NSS_Pin | LORA_RST_Pin;
+	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	  HAL_GPIO_Init(LORA_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, IMU_ADDR_Pin|IMU_INT_Pin|IMU_nRST_Pin|IMU_BL_IND_Pin, GPIO_PIN_RESET);
+	  GPIO_InitStruct.Pin = LORA_MOSI_Pin | LORA_MISO_Pin | LORA_SCLK_Pin;
+	  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  GPIO_InitStruct.Alternate = 0x05;
+	  HAL_GPIO_Init(LORA_SPI_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPSReg_Pwr_GPIO_Port, GPSReg_Pwr_Pin, GPIO_PIN_RESET);
+	  /*Configure GPIO pins : Interrupt test pin */
+	  GPIO_InitStruct.Pin = GPIO_PIN_11;
+	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BB_GPOUT_Pin BB_CE_Pin */
-  GPIO_InitStruct.Pin = BB_GPOUT_Pin|BB_CE_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
+	  /*Configure GPIO pin : RXDone_Pin */
+	  GPIO_InitStruct.Pin = RXDone_Pin;
+	  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  HAL_GPIO_Init(RXDone_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BB_SYSOFF_Pin CS_LoRa_Pin */
-  GPIO_InitStruct.Pin = BB_SYSOFF_Pin|CS_LoRa_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+	  /* EXTI interrupt init*/
+	  HAL_NVIC_SetPriority(LORA_EXTI_IRQn, 1, 0);
+	  HAL_NVIC_EnableIRQ(LORA_EXTI_IRQn);
 
-  /*Configure GPIO pin : session_btn_Pin */
-  GPIO_InitStruct.Pin = session_btn_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(session_btn_GPIO_Port, &GPIO_InitStruct);
+	  /* EXTI interrupt init*/
+	  HAL_NVIC_SetPriority(EXTI1_IRQn, 1, 0);
+	  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 
-  /*Configure GPIO pin : radio_btn_Pin */
-  GPIO_InitStruct.Pin = radio_btn_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(radio_btn_GPIO_Port, &GPIO_InitStruct);
+  }else{
+	  /*Configure GPIO pin Output Level */
+	  HAL_GPIO_WritePin(GPIOH, BB_GPOUT_Pin|BB_CE_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : LED_Pin */
-  GPIO_InitStruct.Pin = LED_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
+	  /*Configure GPIO pin Output Level */
+	  HAL_GPIO_WritePin(GPIOA, BB_SYSOFF_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : IMU_ADDR_Pin IMU_INT_Pin IMU_nRST_Pin IMU_BL_IND_Pin */
-  GPIO_InitStruct.Pin = IMU_ADDR_Pin|IMU_INT_Pin|IMU_nRST_Pin|IMU_BL_IND_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+	  /*Configure GPIO pin Output Level */
+	  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : GPSReg_ERR_Pin */
-  GPIO_InitStruct.Pin = GPSReg_ERR_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPSReg_ERR_GPIO_Port, &GPIO_InitStruct);
+	  /*Configure GPIO pin Output Level */
+	  HAL_GPIO_WritePin(GPSReg_Pwr_GPIO_Port, GPSReg_Pwr_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : GPSReg_Pwr_Pin */
-  GPIO_InitStruct.Pin = GPSReg_Pwr_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPSReg_Pwr_GPIO_Port, &GPIO_InitStruct);
+	  /*Configure GPIO pins : BB_GPOUT_Pin BB_CE_Pin */
+	  GPIO_InitStruct.Pin = BB_GPOUT_Pin|BB_CE_Pin;
+	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	  HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
 
-  /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI1_IRQn, 1, 0);
-  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+	  /*Configure GPIO pins : BB_SYSOFF_Pin CS_LoRa_Pin */
+	  GPIO_InitStruct.Pin = BB_SYSOFF_Pin;
+	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	  /*Configure GPIO pin : session_btn_Pin */
+	  GPIO_InitStruct.Pin = session_btn_Pin;
+	  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  HAL_GPIO_Init(session_btn_GPIO_Port, &GPIO_InitStruct);
+
+	  /*Configure GPIO pin : radio_btn_Pin */
+	  GPIO_InitStruct.Pin = radio_btn_Pin;
+	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  HAL_GPIO_Init(radio_btn_GPIO_Port, &GPIO_InitStruct);
+
+	  /*Configure GPIO pin : LED_Pin */
+	  GPIO_InitStruct.Pin = LED_Pin;
+	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	  HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
+
+	  /*Configure GPIO pin : GPSReg_ERR_Pin */
+	  GPIO_InitStruct.Pin = GPSReg_ERR_Pin;
+	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  HAL_GPIO_Init(GPSReg_ERR_GPIO_Port, &GPIO_InitStruct);
+
+	  /*Configure GPIO pin : GPSReg_Pwr_Pin */
+	  GPIO_InitStruct.Pin = GPSReg_Pwr_Pin;
+	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	  HAL_GPIO_Init(GPSReg_Pwr_GPIO_Port, &GPIO_InitStruct);
+
+  //}else{
+	  /*Configure GPIO pin Output Level */
+	  HAL_GPIO_WritePin(GPIOE, IMU_ADDR_Pin|IMU_INT_Pin|IMU_nRST_Pin|IMU_BL_IND_Pin, GPIO_PIN_RESET);
+
+	  /*Configure GPIO pins : IMU_ADDR_Pin IMU_INT_Pin IMU_nRST_Pin IMU_BL_IND_Pin */
+	  GPIO_InitStruct.Pin = IMU_ADDR_Pin|IMU_INT_Pin|IMU_nRST_Pin|IMU_BL_IND_Pin;
+	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+  }
 }
 
 static void MX_I2C1_Init(void) {
@@ -378,6 +452,24 @@ static void MX_I2C1_Init(void) {
   if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK) {
     Error_Handler();
   }
+}
+
+void SPI1_Init(void){
+
+	// Reset SPI peripheral
+	RCC->APB2RSTR |=  RCC_APB2RSTR_SPI1RST;
+	RCC->APB2RSTR &= ~RCC_APB2RSTR_SPI1RST;
+	/* Enable SPI1 peripheral Clock */
+	RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+
+	/* Set control registers. Full duplex master mode, 64 clk divider, 8 data bits */
+	/* MSB first */
+	SPI1->CR1 = SPI_CR1_BIDIOE | SPI_CR1_BR_0 | SPI_CR1_BR_2 | SPI_CR1_MSTR | SPI_CR1_SSM;
+	SPI1->CR2 = SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2 | SPI_CR2_SSOE; // | SPI_CR2_RXNEIE;
+	SPI1->CR1 |= SPI_CR1_SPE;
+
+	NVIC_SetPriority(SPI1_IRQn, 1); /* (4) */
+	NVIC_EnableIRQ(SPI1_IRQn); /* (5) */
 }
 
 static void MX_I2C2_Init(void) {
@@ -433,7 +525,7 @@ void SystemClock_Config(void) {
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE; // CHANGED
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
   RCC_OscInitStruct.PLL.PLLM = 1;
   RCC_OscInitStruct.PLL.PLLN = 40;
