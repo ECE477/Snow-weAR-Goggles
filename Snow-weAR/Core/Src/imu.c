@@ -122,8 +122,27 @@ int * getAcceleration(void) {
 	static int *accelMag[2];
 	int *accelXYZ = getTrueAccelerationXYZ();
 
-	accelMag[0] = (int)sqrt(pow(accelXYZ[0],2) + pow(accelXYZ[2],2) + pow(accelXYZ[4],2));
-	accelMag[1] = (int)sqrt(pow(accelXYZ[1],2) + pow(accelXYZ[3],2) + pow(accelXYZ[5],2));
+	//Accel is mostly in Z
+	if(accelXYZ[0] < 1 && accelXYZ[2] < 1 && accelXYZ[4] > 1) {
+		accelMag[0] = (int)sqrt(pow(accelXYZ[0],2) + pow(accelXYZ[2],2) + pow(accelXYZ[4] - 9,2));
+		accelMag[1] = (int)sqrt(pow(accelXYZ[1],2) + pow(accelXYZ[3],2) + pow(accelXYZ[5] - 8,2));
+	}
+	//Accel is mostly in Y
+	else if (accelXYZ[0] < 1 && accelXYZ[2] > 1 && accelXYZ[4] < 1) {
+		accelMag[0] = (int)sqrt(pow(accelXYZ[0],2) + pow(accelXYZ[2] - 9,2) + pow(accelXYZ[4],2));
+		accelMag[1] = (int)sqrt(pow(accelXYZ[1],2) + pow(accelXYZ[3] - 8,2) + pow(accelXYZ[5],2));
+	}
+	//Accel is mostly in X
+	else if (accelXYZ[0] > 1 && accelXYZ[2] < 1 && accelXYZ[4] < 1) {
+		accelMag[0] = (int)sqrt(pow(accelXYZ[0] - 9,2) + pow(accelXYZ[2],2) + pow(accelXYZ[4],2));
+		accelMag[1] = (int)sqrt(pow(accelXYZ[1] - 8,2) + pow(accelXYZ[3],2) + pow(accelXYZ[5],2));
+	}
+
+	//If all are greater than 1 (Defualt)
+	if(accelXYZ[0] < 1 && accelXYZ[2] < 1 && accelXYZ[4] < 1){
+		accelMag[0] = (int)sqrt(pow(accelXYZ[0],2) + pow(accelXYZ[2],2) + pow(accelXYZ[4],2));
+		accelMag[1] = (int)sqrt(pow(accelXYZ[1],2) + pow(accelXYZ[3],2) + pow(accelXYZ[5],2));
+	}
 
 	return accelMag;
 }

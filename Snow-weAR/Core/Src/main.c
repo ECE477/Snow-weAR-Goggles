@@ -170,6 +170,14 @@ int main(void)
 
 	//IMU Testing and Examples
 
+	  	//IMU OUTPUT
+//	  	uint8_t	imu_readings[IMU_NUMBER_OF_BYTES];
+//	  	GetAccelData(&hi2c1, (uint8_t*)imu_readings);
+//		char out[30];
+//		sprintf(out, "%c", imu_readings);
+//		ssd1306_SetCursor(4, 5);
+//		ssd1306_WriteString(out, Font_6x8, White);
+
 	  	//Acceleration in XYZ
 		pureAccel = getTrueAccelerationXYZ();
 		char atru[30];
@@ -196,11 +204,16 @@ int main(void)
 
 		//IMU Velocity Mag (m/s)
 		accel = getAcceleration();
-		V[0] = V_last[0] + (accel[0] - 9);
-		V[1] = V_last[1] + (accel[1] - 8);
+		V[0] = (V_last[0] + accel[0])/(10); //divide by 1 second by HAL delay on line 225
+		V[1] = V_last[1] + accel[1];
 
 		V_last[0] = V[0];
 		V_last[1] = V[1];
+
+		//TODO
+		if(V_last[0] < 1){
+			V_last[0] = 0;
+		}
 
 		char v_str[30];
 		sprintf(v_str, "V (m/s): %d.%d",V[0],V[1]);
