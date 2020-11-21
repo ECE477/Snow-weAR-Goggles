@@ -144,6 +144,10 @@ int * getAcceleration(void) {
 		accelMag[1] = (int)sqrt(pow(accelXYZ[1],2) + pow(accelXYZ[3],2) + pow(accelXYZ[5],2));
 	}
 
+	if(accelMag[0] == 0){
+		accelMag[1] = 0;
+	}
+
 	return accelMag;
 }
 
