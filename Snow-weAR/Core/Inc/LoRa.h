@@ -9,12 +9,16 @@
 #define INC_LORA_H_
 
 #include "main.h"
-
+#define GPSDATALEN 11
 void LoRa_Init(void);
 void loraTransmit(uint8_t *buffer, uint8_t len);
 void loraReceiveModeInit(void);
-void loraReceiveGPSData(uint8_t *buf);
+void loraReceiveGPSData(uint8_t * buf);
 void loraTransmitCopy(uint8_t *buffer, uint8_t len);
+
+
+char gpsStringData[GPSDATALEN];
+
 
 // Register names (LoRa Mode, from table 85)
 #define RH_RF95_REG_00_FIFO                                0x00

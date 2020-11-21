@@ -163,8 +163,8 @@ void EXTI15_10_IRQHandler(void)
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
 }
 
-void EXTI3_IRQHandler(void)
+void EXTI2_IRQHandler(void)
 {
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
 }
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

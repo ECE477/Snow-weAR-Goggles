@@ -58,6 +58,16 @@ uint8_t readReg(uint8_t addr){
 	return SPI1->DR & 0xF; // Return received byte
 }
 
+char readCharReg(uint8_t addr){
+	HAL_GPIO_WritePin(LORA_NSS_GPIO_Port, LORA_NSS_Pin, GPIO_PIN_RESET);
+	while (!(SPI1->SR & SPI_SR_TXE)); // Wait while receive buffer is empty
+	SPI1->DR = addr; // Send byte to SPI (TXE cleared)
+	while ((SPI1->SR & SPI_SR_BSY)); // Wait while receive buffer is empty
+	HAL_GPIO_WritePin(LORA_NSS_GPIO_Port, LORA_NSS_Pin, GPIO_PIN_SET);
+
+	return (uint8_t)(SPI1->DR & 0xFF); // Return received byte
+}
+
 void writeReg(uint8_t addr, uint8_t value){
 	uint8_t reg = addr | 0x80;
 	HAL_GPIO_WritePin(LORA_NSS_GPIO_Port, LORA_NSS_Pin, GPIO_PIN_RESET); //pull NSS low to start frame
@@ -79,7 +89,7 @@ void loraTransmitCopy(uint8_t *buffer, uint8_t len){
 	writeReg(RH_RF95_REG_22_PAYLOAD_LENGTH, len);
 	writeReg(RH_RF95_REG_01_OP_MODE, 0x03);
 
-	while(readReg(RH_RF95_REG_12_IRQ_FLAGS) & 0x08);
+	//while(readReg(RH_RF95_REG_12_IRQ_FLAGS) & 0x08);
 	HAL_Delay(50);
 	writeReg(RH_RF95_REG_01_OP_MODE, 0x01); //STDBY
 
@@ -173,7 +183,7 @@ void loraReceiveGPSData(uint8_t *buf){
 	writeReg(RH_RF95_REG_01_OP_MODE, 0x01);
 
 	writeReg(RH_RF95_REG_0D_FIFO_ADDR_PTR, 0x00);
-	loraReceiveModeInit();
+	//loraReceiveModeInit();
 }
 
 void loraReceiveModeInit(void){
@@ -189,7 +199,7 @@ void loraReadFIFO(uint8_t *buf, uint16_t len){
 	readReg(reg);
 	while ((SPI1->SR & SPI_SR_BSY));
 	for(int i = 0; i < len; i++){
-		readReg(REG_FIFO);
+		buf[i] = readCharReg(REG_FIFO);
 	}
 	//HAL_GPIO_WritePin(LORA_NSS_GPIO_Port, LORA_NSS_Pin, GPIO_PIN_RESET); //pull NSS high to end frame
 	//for(int i = 0; i < len; i++){

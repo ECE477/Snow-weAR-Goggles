@@ -78,7 +78,7 @@ int main(void) {
 		ssd1306_Init();
 		while (1) {
 			if(state == 1) {
-				displayHomeScreen();
+				//displayHomeScreen();
 				state = -1;
 			}else if(state == 2) {
 				session();
@@ -96,13 +96,18 @@ int main(void) {
     	uint8_t pack[] = "Snow-weAR";
     	loraTransmitCopy(pack, 9);
 		state = 1;
-		//ssd1306_Init();
-		 HAL_NVIC_SetPriority(RXDone_EXTI_IRQn, 1, 2);
+		ssd1306_Init();
+		 HAL_NVIC_SetPriority(RXDone_EXTI_IRQn, 2, 2);
 		 HAL_NVIC_EnableIRQ(RXDone_EXTI_IRQn);
 		loraReceiveModeInit();
 
     	while(1){
-
+			if(state == 1) {
+				displayHomeScreen();
+				state = -1;
+			}else if(state == 2) {
+				session();
+			}
     	}
     }
 }
@@ -140,13 +145,15 @@ void displayHomeScreen(void) {
 	ssd1306_UpdateScreen();
 	char snow[17] = "Snow-weAR Goggles";
 	ssd1306_SetCursor(4, 45);
-	int i;
+	ssd1306_WriteString("Snow-weAR Goggles", Font_7x10, White);
+	ssd1306_UpdateScreen();
+	/*int i;
 	for(i = 0; i < strlen(snow); i++)
 	{
 		ssd1306_WriteChar(snow[i], Font_7x10, White);
 		HAL_Delay(100);
 		ssd1306_UpdateScreen();
-	}
+	}*/
 }
 
 int sessionStart(void) {
@@ -225,9 +232,13 @@ void session(void) {
 		ssd1306_SetCursor(4, 20);
 		sprintf(lon_str, "%2d.%2d %c", (int)GPS.LonDec, (int)((GPS.LonDec-(int)GPS.LonDec)*100), GPS.EW_Indicator);
 		ssd1306_WriteString(lon_str, Font_7x10, White);
-		ssd1306_SetCursor(4, 30);
+		/*ssd1306_SetCursor(4, 30);
 		GPS_String();
-		ssd1306_WriteString(GPS.str, Font_7x10, White);
+		ssd1306_WriteString(GPS.str, Font_7x10, White);*/
+		sprintf(gpsStringData, "%s", (char*)gpsStringData);
+
+		ssd1306_SetCursor(4, 30);
+		ssd1306_WriteString(gpsStringData, Font_7x10, White);
 
 		// Update Screen
 		ssd1306_UpdateScreen();
@@ -271,9 +282,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if(GPIO_Pin == session_btn_Pin){
 	  int session_btn_val = HAL_GPIO_ReadPin(session_btn_GPIO_Port, session_btn_Pin);
 	  if(session_btn_val) {
-		int sess_ok = sessionStart();
-		if(sess_ok == HAL_OK) {
-			zeroStats();
+		/*int sess_ok = sessionStart();
+		if(sess_ok == HAL_OK) { // CHANGED
+			//zeroStats(); CHANGED
 			state = 2; // In Session
 		}
 		else {
@@ -285,7 +296,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 			ssd1306_UpdateScreen();
 			state = 0; //Error
 			return;
-		}
+		}*/
+		session();
 	  }
 	  else {
 		ssd1306_Fill(Black);
@@ -293,15 +305,24 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		state = 1; //Home
 	  }
   }
-  if(GPIO_Pin == GPIO_PIN_3){
+  if(GPIO_Pin == RXDone_Pin){
 	if(HAL_GPIO_ReadPin(RXDone_GPIO_Port, RXDone_Pin)){
 		HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, GPIO_PIN_SET);
 		//HAL_Delay(100);
 		HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, GPIO_PIN_RESET);
 		// get packet length
-		uint8_t buf[20];
+		for(int i = 0; i < GPSDATALEN; i++){
+			gpsStringData[i] = 0;
+		}
+		uint8_t buf[GPSDATALEN];
 		loraReceiveGPSData(buf);
+		for(int i = 0; i < GPSDATALEN; i++){
+			gpsStringData[i] = (char)buf[i];
+		}
+		loraTransmitCopy(buf, GPSDATALEN);
+		loraReceiveModeInit();
 	}
+
   }
   return;
 }
@@ -352,14 +373,14 @@ static void MX_GPIO_Init(void) {
 	  HAL_GPIO_Init(RXDone_GPIO_Port, &GPIO_InitStruct);
 
 	  /* EXTI interrupt init*/
-	  HAL_NVIC_SetPriority(LORA_EXTI_IRQn, 1, 0);
+	  HAL_NVIC_SetPriority(LORA_EXTI_IRQn, 2, 0);
 	  HAL_NVIC_EnableIRQ(LORA_EXTI_IRQn);
 
 	  /* EXTI interrupt init*/
 	  HAL_NVIC_SetPriority(EXTI1_IRQn, 1, 0);
 	  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 
-  }else{
+
 	  /*Configure GPIO pin Output Level */
 	  HAL_GPIO_WritePin(GPIOH, BB_GPOUT_Pin|BB_CE_Pin, GPIO_PIN_RESET);
 
@@ -418,7 +439,7 @@ static void MX_GPIO_Init(void) {
 	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	  HAL_GPIO_Init(GPSReg_Pwr_GPIO_Port, &GPIO_InitStruct);
 
-  //}else{
+ }else{
 	  /*Configure GPIO pin Output Level */
 	  HAL_GPIO_WritePin(GPIOE, IMU_ADDR_Pin|IMU_INT_Pin|IMU_nRST_Pin|IMU_BL_IND_Pin, GPIO_PIN_RESET);
 
@@ -468,7 +489,7 @@ void SPI1_Init(void){
 	SPI1->CR2 = SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2 | SPI_CR2_SSOE; // | SPI_CR2_RXNEIE;
 	SPI1->CR1 |= SPI_CR1_SPE;
 
-	NVIC_SetPriority(SPI1_IRQn, 1); /* (4) */
+	NVIC_SetPriority(SPI1_IRQn, 2); /* (4) */
 	NVIC_EnableIRQ(SPI1_IRQn); /* (5) */
 }
 
