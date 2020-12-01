@@ -50,12 +50,13 @@ void LoRa_Init(void){
 
 uint8_t readReg(uint8_t addr){
 	HAL_GPIO_WritePin(LORA_NSS_GPIO_Port, LORA_NSS_Pin, GPIO_PIN_RESET);
-	while (!(SPI1->SR & SPI_SR_TXE)); // Wait while receive buffer is empty
-	SPI1->DR = addr; // Send byte to SPI (TXE cleared)
 	while ((SPI1->SR & SPI_SR_BSY)); // Wait while receive buffer is empty
+	SPI1->DR = addr; // Send byte to SPI (TXE cleared)
+	while (!(SPI1->SR & SPI_SR_TXE)); // Wait while receive buffer is empty
+	while (!(SPI1->SR & SPI_SR_RXNE)); // Wait while receive buffer is empty
 	HAL_GPIO_WritePin(LORA_NSS_GPIO_Port, LORA_NSS_Pin, GPIO_PIN_SET);
 
-	return SPI1->DR & 0xF; // Return received byte
+	return SPI1->DR & 0xFF; // Return received byte
 }
 
 char readCharReg(uint8_t addr){
@@ -65,7 +66,7 @@ char readCharReg(uint8_t addr){
 	while ((SPI1->SR & SPI_SR_BSY)); // Wait while receive buffer is empty
 	HAL_GPIO_WritePin(LORA_NSS_GPIO_Port, LORA_NSS_Pin, GPIO_PIN_SET);
 
-	return (uint8_t)(SPI1->DR & 0xFF); // Return received byte
+	return (SPI1->DR & 0xFF); // Return received byte
 }
 
 void writeReg(uint8_t addr, uint8_t value){
@@ -172,6 +173,38 @@ void loraStandbyMode(void){
 }
 void loraReadFIFO(uint8_t *buf, uint16_t len);
 
+void readFIFO(uint8_t buf[], uint16_t size)
+{
+	uint8_t reg = RH_RF95_REG_00_FIFO & ~0x80;
+	while (!(SPI1->SR & SPI_SR_TXE)); // Wait while receive buffer is empty
+	HAL_GPIO_WritePin(LORA_NSS_GPIO_Port, LORA_NSS_Pin, GPIO_PIN_RESET); //pull NSS low to start frame
+	readReg(reg);
+	int i = 0;
+	while(i < size){
+		buf[i] = SPI1->DR;
+		i++;
+	}
+	while ((SPI1->SR & SPI_SR_BSY)); // Wait while receive buffer is empty
+	HAL_GPIO_WritePin(LORA_NSS_GPIO_Port, LORA_NSS_Pin, GPIO_PIN_SET); //pull NSS high to end frame
+}
+
+void loraReceive(uint8_t *buf){
+	writeReg(RH_RF95_REG_01_OP_MODE, 0x01);
+	writeReg(RH_RF95_REG_12_IRQ_FLAGS, 0xFF);
+	if (1 || readReg(RH_RF95_REG_12_IRQ_FLAGS) == 0x00)
+	{
+		writeReg(RH_RF95_REG_0D_FIFO_ADDR_PTR, readReg(RH_RF95_REG_10_FIFO_RX_CURRENT_ADDR)); //fifo addr ptr = fifo rx current addr
+		uint8_t bytesLimit = readReg(RH_RF95_REG_13_RX_NB_BYTES);
+		//HAL_Delay(10);
+		readFIFO(buf, (uint16_t) bytesLimit);
+		writeReg(RH_RF95_REG_0D_FIFO_ADDR_PTR, 0x00);
+	}
+	writeReg(RH_RF95_REG_01_OP_MODE, 0x05);
+	writeReg(RH_RF95_REG_40_DIO_MAPPING1, 0x00);
+}
+
+
+
 void loraReceiveGPSData(uint8_t *buf){
 	writeReg(RH_RF95_REG_12_IRQ_FLAGS, RH_RF95_RX_DONE_MASK);
 
@@ -179,6 +212,12 @@ void loraReceiveGPSData(uint8_t *buf){
 	writeReg(RH_RF95_REG_0D_FIFO_ADDR_PTR, currAddr);
 	uint8_t len = readReg(RH_RF95_REG_13_RX_NB_BYTES);
 
+	/*int i = 0;
+	readReg(0x00);
+	while(i < len && (SPI1->SR & SPI_SR_RXNE)){
+		buf[i] = SPI1->DR;
+		i++;
+	}*/
 	loraReadFIFO(buf, (uint16_t) len);
 	writeReg(RH_RF95_REG_01_OP_MODE, 0x01);
 
@@ -199,7 +238,7 @@ void loraReadFIFO(uint8_t *buf, uint16_t len){
 	readReg(reg);
 	while ((SPI1->SR & SPI_SR_BSY));
 	for(int i = 0; i < len; i++){
-		buf[i] = readCharReg(REG_FIFO);
+		buf[i] = readReg(REG_FIFO);
 	}
 	//HAL_GPIO_WritePin(LORA_NSS_GPIO_Port, LORA_NSS_Pin, GPIO_PIN_RESET); //pull NSS high to end frame
 	//for(int i = 0; i < len; i++){
@@ -207,6 +246,7 @@ void loraReadFIFO(uint8_t *buf, uint16_t len){
 	//}
   // End SPI transaction
 	//HAL_GPIO_WritePin(LORA_NSS_GPIO_Port, LORA_NSS_Pin, GPIO_PIN_SET); //pull NSS high to end frame
+	return;
 }
 
 
