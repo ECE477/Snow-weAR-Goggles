@@ -34,6 +34,7 @@ void Error_Handler(void);
 
 #define LoRaDev // just initialize GPS, oLED, LoRa
 
+
 #define BB_GPOUT_Pin GPIO_PIN_0
 #define BB_GPOUT_GPIO_Port GPIOH
 #define BB_CE_Pin GPIO_PIN_1
@@ -79,6 +80,7 @@ void Error_Handler(void);
 #define LORA_MOSI_Pin			GPIO_PIN_15
 #define LORA_EXTI_IRQn			EXTI15_10_IRQn
 #define REG_FIFO				0x00
+
 
 #else
 

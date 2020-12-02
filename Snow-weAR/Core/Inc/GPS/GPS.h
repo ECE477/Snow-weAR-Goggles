@@ -25,7 +25,7 @@ typedef struct {
 
 	float		Velocity;
 
-	char* 		str;
+	char 		str[12];
 
 } GPS_t;
 
@@ -34,6 +34,7 @@ extern GPS_t GPS;
 //##################################################################################################################
 double convertDegMinToDecDeg (float degMin);
 void GPS_Parse(void);
+void GPS_String(void);
 //##################################################################################################################
 
 #endif
