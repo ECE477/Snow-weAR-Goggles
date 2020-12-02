@@ -20,10 +20,12 @@ C_DEPS += \
 
 
 # Each subdirectory must supply rules for building sources it contributes
-Core/Inc/SSD1306/ssd1306.o: ../Core/Inc/SSD1306/ssd1306.c
-	arm-none-eabi-gcc "$<" -mcpu=cortex-m4 -std=gnu11 -g3 -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -Og -ffunction-sections -Wall -fstack-usage -MMD -MP -MF"Core/Inc/SSD1306/ssd1306.d" -MT"$@" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "$@"
-Core/Inc/SSD1306/ssd1306_fonts.o: ../Core/Inc/SSD1306/ssd1306_fonts.c
-	arm-none-eabi-gcc "$<" -mcpu=cortex-m4 -std=gnu11 -g3 -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -Og -ffunction-sections -Wall -fstack-usage -MMD -MP -MF"Core/Inc/SSD1306/ssd1306_fonts.d" -MT"$@" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "$@"
-Core/Inc/SSD1306/ssd1306_tests.o: ../Core/Inc/SSD1306/ssd1306_tests.c
-	arm-none-eabi-gcc "$<" -mcpu=cortex-m4 -std=gnu11 -g3 -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -Og -ffunction-sections -Wall -fstack-usage -MMD -MP -MF"Core/Inc/SSD1306/ssd1306_tests.d" -MT"$@" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "$@"
+Core/Inc/SSD1306/%.o: ../Core/Inc/SSD1306/%.c
+	@echo 'Building file: $<'
+	@echo 'Invoking: MCU GCC Compiler'
+	@echo $(PWD)
+	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -DUSE_HAL_DRIVER -DSTM32L476xx -I"C:/Users/esumn/OneDrive/Documents/Snow-weAR-Goggles/Snow-weAR/Core/Inc" -I"C:/Users/esumn/OneDrive/Documents/Snow-weAR-Goggles/Snow-weAR/Drivers/STM32L4xx_HAL_Driver/Inc" -I"C:/Users/esumn/OneDrive/Documents/Snow-weAR-Goggles/Snow-weAR/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy" -I"C:/Users/esumn/OneDrive/Documents/Snow-weAR-Goggles/Snow-weAR/Drivers/CMSIS/Device/ST/STM32L4xx/Include" -I"C:/Users/esumn/OneDrive/Documents/Snow-weAR-Goggles/Snow-weAR/Drivers/CMSIS/Include"  -Og -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+
 

@@ -15,6 +15,8 @@ _BEGIN_STD_C
 
 #include "ssd1306_conf.h"
 
+#define SSD1306_MIRROR_VERT
+
 #if defined(STM32F0)
 #include "stm32f0xx_hal.h"
 #elif defined(STM32F1)

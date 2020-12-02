@@ -22,7 +22,6 @@
 #include "../Inc/SSD1306/ssd1306_tests.h"
 #include "../Inc/GPS/usart.h"
 #include "../Inc/GPS/GPS.h"
-#include "../Inc/IMU/IMU.h"
 #include "../Inc/BB.h"
 #include "../Inc/LoRa.h"
 
@@ -32,10 +31,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
-
-#define BB_I2C_ADDRESS 0x55
-#define BB_COMMAND_REM_CAPACITY	0x0C
-#define BQ72441_I2C_TIMEOUT 2000
 
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
@@ -53,8 +48,6 @@ static void MX_I2C2_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_I2C3_Init(void);
 static void SPI1_Init(void);
-uint8_t readReg(uint8_t addr);
-
 void USART2_IRQHandler(void);
 
 void displayHomeScreen(void);
@@ -66,48 +59,30 @@ int main(void) {
 	HAL_Init();
 
     SystemClock_Config();
+    MX_I2C1_Init();
+    MX_I2C2_Init();
+    MX_I2C3_Init();
     MX_GPIO_Init();
+    //SPI1_Init();
+    MX_GPIO_Init_USART();
+    MX_USART2_UART_Init();
 
-    if(!DEV){
-    	MX_I2C1_Init();
-		MX_I2C2_Init();
-		MX_I2C3_Init();
-		MX_GPIO_Init_USART();
-		MX_USART2_UART_Init();
-		state = 1;
-		ssd1306_Init();
-		while (1) {
-			if(state == 1) {
-				//displayHomeScreen();
-				state = -1;
-			}else if(state == 2) {
-				session();
-			}
-		}
-    }
-    else{
-    	MX_I2C1_Init();
-		MX_I2C2_Init();
-		MX_I2C3_Init();
-		MX_GPIO_Init_USART();
-		MX_USART2_UART_Init();
-    	SPI1_Init();
-    	LoRa_Init();
-    	uint8_t pack[] = "Snow-weAR";
-    	loraTransmitCopy(pack, 9);
-		state = 1;
-		ssd1306_Init();
-		 HAL_NVIC_SetPriority(RXDone_EXTI_IRQn, 2, 2);
-		 HAL_NVIC_EnableIRQ(RXDone_EXTI_IRQn);
-		loraReceiveModeInit();
+    state = 1;
+    ssd1306_Init();
+    //LoRa_Init();
+    //uint8_t pack[] = "Snow-weAR";
+    //loraTransmitCopy(pack, 9);
+    //HAL_NVIC_SetPriority(RXDone_EXTI_IRQn, 2, 2);
+    //HAL_NVIC_EnableIRQ(RXDone_EXTI_IRQn);
+    //loraReceiveModeInit();
 
-    	while(1){
-			if(state == 1) {
-				displayHomeScreen();
-				state = -1;
-			}else if(state == 2) {
-				session();
-			}
+    while (1) {
+    	if(state == 1) {
+    		displayHomeScreen();
+    		state = 2;
+    	}
+    	else if(state == 2) {
+    		session();
     	}
     }
 }
@@ -145,15 +120,13 @@ void displayHomeScreen(void) {
 	ssd1306_UpdateScreen();
 	char snow[17] = "Snow-weAR Goggles";
 	ssd1306_SetCursor(4, 45);
-	ssd1306_WriteString("Snow-weAR Goggles", Font_7x10, White);
-	ssd1306_UpdateScreen();
-	/*int i;
+	int i;
+	ssd1306_WriteString(snow, Font_7x10, White);
 	for(i = 0; i < strlen(snow); i++)
 	{
 		ssd1306_WriteChar(snow[i], Font_7x10, White);
-		HAL_Delay(100);
 		ssd1306_UpdateScreen();
-	}*/
+	}
 }
 
 int sessionStart(void) {
@@ -216,9 +189,9 @@ void session(void) {
 			cur_temp = temp;
 			char temp_str[15];
 			sprintf(temp_str, "%2d.%1d F",(int)temp/10, (int)temp%10);
-			ssd1306_SetCursor(83, 15);
-			ssd1306_WriteString(temp_str, Font_7x10, White);
-			ssd1306_DrawCircle(115, 15, 1, White);
+			ssd1306_SetCursor(88, 10);
+			ssd1306_WriteString(temp_str, Font_6x8, White);
+			ssd1306_DrawCircle(114, 11, 1, White);
 		}
 
 		// Read IMU
@@ -226,58 +199,27 @@ void session(void) {
 		// Read GPS
 		char lat_str[15];
 		char lon_str[15];
-		sprintf(lat_str, "%2d.%2d %c", (int)GPS.LatDec, (int)((GPS.LatDec-(int)GPS.LatDec)*100), GPS.NS_Indicator);
+		sprintf(lat_str, "%2d.%2d%c", (int)GPS.LatDec, (int)((GPS.LatDec-(int)GPS.LatDec)*100), GPS.NS_Indicator);
+		ssd1306_SetCursor(4, 54);
+		ssd1306_WriteString(lat_str, Font_6x8, White);
+		ssd1306_SetCursor(46, 54);
+		sprintf(lon_str, "%2d.%2d%c", (int)GPS.LonDec, (int)((GPS.LonDec-(int)GPS.LonDec)*100), GPS.EW_Indicator);
+		ssd1306_WriteString(lon_str, Font_6x8, White);
+
+		char toLora[12];
 		ssd1306_SetCursor(4, 10);
-		ssd1306_WriteString(lat_str, Font_7x10, White);
-		ssd1306_SetCursor(4, 20);
-		sprintf(lon_str, "%2d.%2d %c", (int)GPS.LonDec, (int)((GPS.LonDec-(int)GPS.LonDec)*100), GPS.EW_Indicator);
-		ssd1306_WriteString(lon_str, Font_7x10, White);
-		/*ssd1306_SetCursor(4, 30);
-		GPS_String();
-		ssd1306_WriteString(GPS.str, Font_7x10, White);*/
-		sprintf(gpsStringData, "%s", (char*)gpsStringData);
+		GPS_toString();
+		sprintf(toLora, GPS.str);
+		ssd1306_WriteString(toLora, Font_6x8, White);
 
-		ssd1306_SetCursor(4, 30);
-		ssd1306_WriteString(gpsStringData, Font_7x10, White);
-
-		// Update Screen
+		//Update Screen
 		ssd1306_UpdateScreen();
 	}
 	return;
 }
 
-void zeroStats(void) {
-	ssd1306_Fill(Black);
-	ssd1306_SetCursor(4, 10);
-	ssd1306_WriteString("00.0", Font_11x18, White);
-	ssd1306_WriteString("kmh", Font_6x8, White);
-
-	ssd1306_SetCursor(83, 15);
-	char temp_str[15];
-	sprintf(temp_str, "%02d.%1d F", 0, 0);
-	ssd1306_WriteString(temp_str, Font_7x10, White);
-	ssd1306_DrawCircle(115, 15, 1, White);
-
-
-	ssd1306_DrawCircle(5, 54, 2, White);
-	ssd1306_DrawArc(5, 60, 4, 90, 270, White);
-	ssd1306_SetCursor(14, 54);
-	char gps_str[20];
-	sprintf(gps_str, "%02dN %02dW %02dU", 0, 0, 0);
-	ssd1306_WriteString(gps_str, Font_6x8, White);
-
-	ssd1306_SetCursor(100, 54);
-	uint16_t soc = BB_soc(&hi2c1, 0);
-	char soc_str[30];
-	sprintf(soc_str, "%3d%% ", soc);
-	ssd1306_WriteString(soc_str, Font_6x8, White);
-
-	ssd1306_UpdateScreen();
-	return;
-}
-
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-  /* EXTI line interrupt detected */
+ /* EXTI line interrupt detected */
 	//HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
   if(GPIO_Pin == session_btn_Pin){
 	  int session_btn_val = HAL_GPIO_ReadPin(session_btn_GPIO_Port, session_btn_Pin);
@@ -338,9 +280,8 @@ static void MX_GPIO_Init(void) {
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
-  if(DEV){
+  if(DEV) {
 	  HAL_GPIO_WritePin(LORA_GPIO_Port, LORA_NSS_Pin, GPIO_PIN_SET);
-
 	  /*Configure GPIO pin Output Level */
 	  HAL_GPIO_WritePin(LORA_GPIO_Port, LORA_RST_Pin, GPIO_PIN_SET);
 	  HAL_GPIO_WritePin(RXDone_GPIO_Port, RXDone_Pin, GPIO_PIN_RESET);
@@ -439,7 +380,7 @@ static void MX_GPIO_Init(void) {
 	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	  HAL_GPIO_Init(GPSReg_Pwr_GPIO_Port, &GPIO_InitStruct);
 
- }else{
+   }else{
 	  /*Configure GPIO pin Output Level */
 	  HAL_GPIO_WritePin(GPIOE, IMU_ADDR_Pin|IMU_INT_Pin|IMU_nRST_Pin|IMU_BL_IND_Pin, GPIO_PIN_RESET);
 
@@ -449,7 +390,7 @@ static void MX_GPIO_Init(void) {
 	  GPIO_InitStruct.Pull = GPIO_NOPULL;
 	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
-  }
+	}
 }
 
 static void MX_I2C1_Init(void) {
@@ -473,24 +414,6 @@ static void MX_I2C1_Init(void) {
   if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK) {
     Error_Handler();
   }
-}
-
-void SPI1_Init(void){
-
-	// Reset SPI peripheral
-	RCC->APB2RSTR |=  RCC_APB2RSTR_SPI1RST;
-	RCC->APB2RSTR &= ~RCC_APB2RSTR_SPI1RST;
-	/* Enable SPI1 peripheral Clock */
-	RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
-
-	/* Set control registers. Full duplex master mode, 64 clk divider, 8 data bits */
-	/* MSB first */
-	SPI1->CR1 = SPI_CR1_BIDIOE | SPI_CR1_BR_0 | SPI_CR1_BR_2 | SPI_CR1_MSTR | SPI_CR1_SSM;
-	SPI1->CR2 = SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2 | SPI_CR2_SSOE; // | SPI_CR2_RXNEIE;
-	SPI1->CR1 |= SPI_CR1_SPE;
-
-	NVIC_SetPriority(SPI1_IRQn, 2); /* (4) */
-	NVIC_EnableIRQ(SPI1_IRQn); /* (5) */
 }
 
 static void MX_I2C2_Init(void) {
@@ -537,6 +460,23 @@ static void MX_I2C3_Init(void) {
   }
 }
 
+static void SPI1_Init(void) {
+	// Reset SPI peripheral
+	RCC->APB2RSTR |=  RCC_APB2RSTR_SPI1RST;
+	RCC->APB2RSTR &= ~RCC_APB2RSTR_SPI1RST;
+	/* Enable SPI1 peripheral Clock */
+	RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+
+	/* Set control registers. Full duplex master mode, 64 clk divider, 8 data bits */
+	/* MSB first */
+	SPI1->CR1 = SPI_CR1_BIDIOE | SPI_CR1_BR_0 | SPI_CR1_BR_2 | SPI_CR1_MSTR | SPI_CR1_SSM;
+	SPI1->CR2 = SPI_CR2_DS_0 | SPI_CR2_DS_1 | SPI_CR2_DS_2 | SPI_CR2_SSOE; // | SPI_CR2_RXNEIE;
+	SPI1->CR1 |= SPI_CR1_SPE;
+
+	NVIC_SetPriority(SPI1_IRQn, 2); /* (4) */
+	NVIC_EnableIRQ(SPI1_IRQn); /* (5) */
+}
+
 void SystemClock_Config(void) {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
@@ -546,7 +486,7 @@ void SystemClock_Config(void) {
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE; // CHANGED
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
   RCC_OscInitStruct.PLL.PLLM = 1;
   RCC_OscInitStruct.PLL.PLLN = 40;

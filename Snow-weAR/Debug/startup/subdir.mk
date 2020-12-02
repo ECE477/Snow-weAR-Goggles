@@ -9,11 +9,14 @@ S_SRCS += \
 OBJS += \
 ./startup/startup_stm32l476xx.o 
 
-S_DEPS += \
-./startup/startup_stm32l476xx.d 
-
 
 # Each subdirectory must supply rules for building sources it contributes
-startup/startup_stm32l476xx.o: ../startup/startup_stm32l476xx.s
-	arm-none-eabi-gcc -mcpu=cortex-m4 -g3 -c -x assembler-with-cpp -MMD -MP -MF"startup/startup_stm32l476xx.d" -MT"$@" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "$@" "$<"
+startup/%.o: ../startup/%.s
+	@echo 'Building file: $<'
+	@echo 'Invoking: MCU GCC Assembler'
+	@echo $(PWD)
+	arm-none-eabi-as -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -g -o "$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+
 

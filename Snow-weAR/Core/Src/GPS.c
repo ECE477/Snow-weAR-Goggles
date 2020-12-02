@@ -14,7 +14,8 @@ int store[100] = {0};
 int count = 0;
 
 //##################################################################################################################
-double convertDegMinToDecDeg (float degMin) {
+double convertDegMinToDecDeg (float degMin)
+{
   double min = 0.0;
   double decDeg = 0.0;
 
@@ -28,7 +29,7 @@ double convertDegMinToDecDeg (float degMin) {
   return decDeg;
 }
 
-void GPS_Parse(void) {
+void GPS_Parse(void){
 
 	char* str = (char*) GPS.rxBuffer;
 
@@ -116,8 +117,8 @@ void GPS_Parse(void) {
 	GPS.MSL_Altitude = GPS.MSL_Altitude + altDecimal / divFactor;
 }
 
-void GPS_String(void) {
-	sprintf(GPS.str, "%2d%2d%c%2d%2d%c", (int)GPS.LatDec, (int)((GPS.LatDec-(int)GPS.LatDec)*100), GPS.NS_Indicator, (int)GPS.LonDec, (int)((GPS.LonDec-(int)GPS.LonDec)*100), GPS.EW_Indicator);
+void GPS_toString(void) {
+	 GPS.str = ("x%2d%2d%c%2d%2d%c", (int)GPS.LatDec, (int)((GPS.LatDec-(int)GPS.LatDec)*100), GPS.NS_Indicator, (int)GPS.LonDec, (int)((GPS.LonDec-(int)GPS.LonDec)*100), GPS.EW_Indicator);
 }
 
 //##################################################################################################################
