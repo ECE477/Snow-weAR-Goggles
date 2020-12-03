@@ -13,12 +13,13 @@
 #define LORAHEADERLEN 3
 #define LORADATALEN (GPSDATALEN + LORAHEADERLEN + 1)
 
-void LoRa_Init(void);
+int LoRa_Init(void);
 void loraTransmit(uint8_t *buffer, uint8_t len);
 void loraReceiveModeInit(void);
 void loraReceiveGPSData(uint8_t * buf);
 void loraTransmitCopy(uint8_t *buffer, uint8_t len);
-
+void writeReg(uint8_t addr, uint8_t reg);
+uint8_t readReg(uint8_t addr);
 
 char gpsStringData[GPSDATALEN];
 

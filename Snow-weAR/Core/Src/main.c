@@ -94,20 +94,20 @@ int main(void) {
     	SPI1_Init();
     	LoRa_Init();
     	uint8_t pack[] = "Snow-weAR";
-    	loraTransmitCopy(pack, 9);
+    	loraTransmit(pack, 9);
 		state = 1;
-		ssd1306_Init();
-		 HAL_NVIC_SetPriority(RXDone_EXTI_IRQn, 2, 2);
+		//ssd1306_Init();
+		 HAL_NVIC_SetPriority(RXDone_EXTI_IRQn, 1, 0);
 		 HAL_NVIC_EnableIRQ(RXDone_EXTI_IRQn);
 		loraReceiveModeInit();
 
     	while(1){
-			if(state == 1) {
+			/*if(state == 1) {
 				displayHomeScreen();
 				state = -1;
 			}else if(state == 2) {
 				session();
-			}
+			}*/
     	}
     }
 }
@@ -306,25 +306,20 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	  }
   }
   if(GPIO_Pin == RXDone_Pin){
-	if(HAL_GPIO_ReadPin(RXDone_GPIO_Port, RXDone_Pin)){
-		HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, GPIO_PIN_SET);
-		HAL_Delay(100);
-		HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, GPIO_PIN_RESET);
-		// get packet length
-		for(int i = 0; i < GPSDATALEN; i++){
-			gpsStringData[i] = 0;
-		}
-		uint8_t buf[LORADATALEN];
-		loraReceiveGPSData(buf);
-		for(int i = 0; i < GPSDATALEN; i++){
-			gpsStringData[i] = (char)buf[i + LORAHEADERLEN];
-		}
-		loraTransmitCopy(buf, GPSDATALEN);
-		loraReceiveModeInit();
+	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, GPIO_PIN_SET);
+	//HAL_Delay(100);
+	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, GPIO_PIN_RESET);
+	int irq_flags = readReg(RH_RF95_REG_12_IRQ_FLAGS);
+	int num = readReg(RH_RF95_REG_13_RX_NB_BYTES);
+	readReg(0x42);
+	writeReg(RH_RF95_REG_12_IRQ_FLAGS, RH_RF95_RX_DONE_MASK);
+	uint8_t buf[15];
+	loraReceive(buf);
+	for(int i = 0; i < 15; i++){
+		gpsStringData[i] = (char)buf[i];
 	}
-
+	loraReceiveModeInit();
   }
-  return;
 }
 
 static void MX_GPIO_Init(void) {
@@ -373,11 +368,11 @@ static void MX_GPIO_Init(void) {
 	  HAL_GPIO_Init(RXDone_GPIO_Port, &GPIO_InitStruct);
 
 	  /* EXTI interrupt init*/
-	  HAL_NVIC_SetPriority(LORA_EXTI_IRQn, 2, 0);
+	  HAL_NVIC_SetPriority(LORA_EXTI_IRQn, 1, 0);
 	  HAL_NVIC_EnableIRQ(LORA_EXTI_IRQn);
 
 	  /* EXTI interrupt init*/
-	  HAL_NVIC_SetPriority(EXTI1_IRQn, 1, 0);
+	  HAL_NVIC_SetPriority(EXTI1_IRQn, 2, 0);
 	  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 	  //HAL_NVIC_SetPriority(EXTI0_IRQn, 4, 1);
 	  //HAL_NVIC_EnableIRQ(EXTI0_IRQn);
