@@ -308,16 +308,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if(GPIO_Pin == RXDone_Pin){
 	if(HAL_GPIO_ReadPin(RXDone_GPIO_Port, RXDone_Pin)){
 		HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, GPIO_PIN_SET);
-		//HAL_Delay(100);
+		HAL_Delay(100);
 		HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, GPIO_PIN_RESET);
 		// get packet length
 		for(int i = 0; i < GPSDATALEN; i++){
 			gpsStringData[i] = 0;
 		}
-		uint8_t buf[GPSDATALEN];
+		uint8_t buf[LORADATALEN];
 		loraReceiveGPSData(buf);
 		for(int i = 0; i < GPSDATALEN; i++){
-			gpsStringData[i] = (char)buf[i];
+			gpsStringData[i] = (char)buf[i + LORAHEADERLEN];
 		}
 		loraTransmitCopy(buf, GPSDATALEN);
 		loraReceiveModeInit();
@@ -379,7 +379,8 @@ static void MX_GPIO_Init(void) {
 	  /* EXTI interrupt init*/
 	  HAL_NVIC_SetPriority(EXTI1_IRQn, 1, 0);
 	  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
-
+	  //HAL_NVIC_SetPriority(EXTI0_IRQn, 4, 1);
+	  //HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
 	  /*Configure GPIO pin Output Level */
 	  HAL_GPIO_WritePin(GPIOH, BB_GPOUT_Pin|BB_CE_Pin, GPIO_PIN_RESET);
