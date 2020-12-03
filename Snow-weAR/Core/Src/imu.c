@@ -115,30 +115,61 @@ void BNO055_Init_I2C(I2C_HandleTypeDef* hi2c_device) {
 	HAL_Delay(50);
 }
 
+int * getAvgAcceleration(void){
+
+	static int *accelMagAVG[2];
+
+	int accelSumInts;
+	int accelSumDecim;
+
+	int *accelXYZ = getAcceleration();
+	for(int i = 0; i < 9; i++){
+		HAL_Delay(100);
+		accelSumInts += accelXYZ[0];
+		accelSumDecim += accelXYZ[1];
+		accelXYZ = getAcceleration();
+	}
+
+	accelMagAVG[0] = accelSumInts / 100;
+	accelMagAVG[1] = accelSumDecim / 100;
+
+	return accelMagAVG;
+}
+
 int * getAcceleration(void) {
-	//TIME IS INCLUDED IN THIS CALC
 
 	static int *accelMag[2];
 	int *accelXYZ = getTrueAccelerationXYZ();
 
 	//Accel is mostly in Z
-	if(accelXYZ[0] < 1 && accelXYZ[2] < 1 && accelXYZ[4] > 1) {
+	if(accelXYZ[0] == 0 && accelXYZ[2] == 0 && (accelXYZ[4] > 1 || accelXYZ[4] < 1)) {
 		accelMag[0] = (int)sqrt(pow(accelXYZ[0],2) + pow(accelXYZ[2],2) + pow(accelXYZ[4] - 9,2));
 		accelMag[1] = (int)sqrt(pow(accelXYZ[1],2) + pow(accelXYZ[3],2) + pow(accelXYZ[5] - 8,2));
+
+		if(accelXYZ[4] < 1) {
+			accelMag[0] = *accelMag[0] * -1;
+		}
 	}
 	//Accel is mostly in Y
-	else if (accelXYZ[0] < 1 && accelXYZ[2] > 1 && accelXYZ[4] < 1) {
+	else if (accelXYZ[0] == 0 && (accelXYZ[2] > 1 || accelXYZ[2] < 1) && accelXYZ[4] == 0) {
 		accelMag[0] = (int)sqrt(pow(accelXYZ[0],2) + pow(accelXYZ[2] - 9,2) + pow(accelXYZ[4],2));
 		accelMag[1] = (int)sqrt(pow(accelXYZ[1],2) + pow(accelXYZ[3] - 8,2) + pow(accelXYZ[5],2));
+
+		if(accelXYZ[2] < 1) {
+			accelMag[0] = *accelMag[0] * -1;
+		}
 	}
 	//Accel is mostly in X
-	else if (accelXYZ[0] > 1 && accelXYZ[2] < 1 && accelXYZ[4] < 1) {
+	else if ((accelXYZ[0] > 1 || accelXYZ[0] < 1) && accelXYZ[2] == 0 && accelXYZ[4] == 0) {
 		accelMag[0] = (int)sqrt(pow(accelXYZ[0] - 9,2) + pow(accelXYZ[2],2) + pow(accelXYZ[4],2));
 		accelMag[1] = (int)sqrt(pow(accelXYZ[1] - 8,2) + pow(accelXYZ[3],2) + pow(accelXYZ[5],2));
-	}
 
-	//If all are greater than 1 (Defualt)
-	if(accelXYZ[0] < 1 && accelXYZ[2] < 1 && accelXYZ[4] < 1){
+		if(accelXYZ[0] < 1) {
+			accelMag[0] = *accelMag[0] * -1;
+		}
+	}
+	//If all are greater than 1 or less than -1(Default)
+	else {
 		accelMag[0] = (int)sqrt(pow(accelXYZ[0],2) + pow(accelXYZ[2],2) + pow(accelXYZ[4],2));
 		accelMag[1] = (int)sqrt(pow(accelXYZ[1],2) + pow(accelXYZ[3],2) + pow(accelXYZ[5],2));
 	}

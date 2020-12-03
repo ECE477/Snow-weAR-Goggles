@@ -145,6 +145,7 @@ void session(void) {
 	int *accel;
 	int V[2] = {0,0};
 	int V_last[2] = {0,0};
+	int V_max[2] = {0,0};
 
 	while(1) {
 		if(state == 1)
@@ -169,17 +170,33 @@ void session(void) {
 		}
 
 		//IMU Velocity Mag (m/s)
-		accel = getAcceleration();
-		V[0] = V_last[0] + accel[0]/10; //divide by 1 second by HAL delay on line 225
+		accel = getAvgAcceleration();
+		V[0] = V_last[0] + accel[0];
 		V[1] = V_last[1] + accel[1];
+
+		if(V[0] > 67){
+			V[0] == 0;
+		}
 
 		V_last[0] = V[0];
 		V_last[1] = V[1];
+
+		if(V[0] > V_max[0]){
+			if(V[1] > V_max[1]){
+				V_max[0] = V[0];
+				V_max[1] = V[1];
+			}
+		}
 
 		char v_str[30];
 		sprintf(v_str, "V (m/s): %d.%d",V[0],V[1]);
 		ssd1306_SetCursor(4, 20);
 		ssd1306_WriteString(v_str, Font_6x8, White);
+
+		char vmx_str[30];
+		sprintf(vmx_str, "Vmax(m/s): %d.%d",V_max[0],V_max[1]);
+		ssd1306_SetCursor(4, 30);
+		ssd1306_WriteString(vmx_str, Font_6x8, White);
 
 		// Read GPS
 		char lat_str[15];

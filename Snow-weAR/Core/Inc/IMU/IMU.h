@@ -9,6 +9,7 @@
 
 extern uint8_t					imu_readings[IMU_NUMBER_OF_BYTES];
 
+int * getAvgAcceleration(void);
 int * getAcceleration(void);
 int * getTrueAccelerationXYZ(void);
 int * getQuats(void);
