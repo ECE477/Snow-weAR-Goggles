@@ -149,7 +149,6 @@ void session(void) {
 	while(1) {
 		if(state == 1)
 			return;
-		/*
 		uint16_t soc = BB_soc(&hi2c1, 0);
 		if(soc != cur_soc) {
 			cur_soc = soc;
@@ -168,36 +167,33 @@ void session(void) {
 			ssd1306_WriteString(temp_str, Font_6x8, White);
 			ssd1306_DrawCircle(115, 11, 1, White);
 		}
-		*/
 
 		//IMU Velocity Mag (m/s)
-		if(state == 2) {
-			accel = getAcceleration();
-			V[0] = V_last[0] + accel[0]/10; //divide by 1 second by HAL delay on line 225
-			V[1] = V_last[1] + accel[1];
+		accel = getAcceleration();
+		V[0] = V_last[0] + accel[0]/10; //divide by 1 second by HAL delay on line 225
+		V[1] = V_last[1] + accel[1];
 
-			V_last[0] = V[0];
-			V_last[1] = V[1];
+		V_last[0] = V[0];
+		V_last[1] = V[1];
 
-			char v_str[30];
-			sprintf(v_str, "V (m/s): %d.%d",V[0],V[1]);
-			ssd1306_SetCursor(4, 10);
-			ssd1306_WriteString(v_str, Font_6x8, White);
-		} else {
-			// Read GPS
-			char lat_str[15];
-			char lon_str[15];
-			sprintf(lat_str, "%2d.%2d%c", (int)GPS.LatDec, (int)((GPS.LatDec-(int)GPS.LatDec)*100), GPS.NS_Indicator);
-			ssd1306_SetCursor(30, 10);
-			ssd1306_WriteString(lat_str, Font_6x8, White);
-			ssd1306_SetCursor(72, 10);
-			sprintf(lon_str, "%2d.%2d%c", (int)GPS.LonDec, (int)((GPS.LonDec-(int)GPS.LonDec)*100), GPS.EW_Indicator);
-			ssd1306_WriteString(lon_str, Font_6x8, White);
-			ssd1306_SetCursor(4, 10);
-			char gps_msg[10];
-			sprintf(gps_msg, "GPS:");
-			ssd1306_WriteString(gps_msg, Font_6x8, White);
-		}
+		char v_str[30];
+		sprintf(v_str, "V (m/s): %d.%d",V[0],V[1]);
+		ssd1306_SetCursor(4, 20);
+		ssd1306_WriteString(v_str, Font_6x8, White);
+
+		// Read GPS
+		char lat_str[15];
+		char lon_str[15];
+		sprintf(lat_str, "%2d.%2d%c", (int)GPS.LatDec, (int)((GPS.LatDec-(int)GPS.LatDec)*100), GPS.NS_Indicator);
+		ssd1306_SetCursor(30, 40);
+		ssd1306_WriteString(lat_str, Font_6x8, White);
+		ssd1306_SetCursor(72, 40);
+		sprintf(lon_str, "%2d.%2d%c", (int)GPS.LonDec, (int)((GPS.LonDec-(int)GPS.LonDec)*100), GPS.EW_Indicator);
+		ssd1306_WriteString(lon_str, Font_6x8, White);
+		ssd1306_SetCursor(4, 40);
+		char gps_msg[10];
+		sprintf(gps_msg, "GPS:");
+		ssd1306_WriteString(gps_msg, Font_6x8, White);
 
 		ssd1306_SetCursor(4, 54);
 		ssd1306_WriteString(gpsStringData, Font_6x8, White);
@@ -277,8 +273,17 @@ void zeroStats(void) {
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   /* EXTI line interrupt detected */
 	//HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-  if(GPIO_Pin == session_btn_Pin) {
+  if(GPIO_Pin == session_btn_Pin){
 	  int session_btn_val = HAL_GPIO_ReadPin(session_btn_GPIO_Port, session_btn_Pin);
+	  if(inSession == false) {
+		  if(state == 2) {
+			  state = 3;
+		  } else {
+			  state = 2;
+		  }
+		  inSession = true;
+	  }
+	  /*
 	  if(session_btn_val) {
 		  state = 2;
 	  } else {
@@ -286,6 +291,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		ssd1306_UpdateScreen();
 		state = 1; //Home
 	  }
+	*/
   }
   if(GPIO_Pin == RXDone_Pin){
 	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, GPIO_PIN_SET);
@@ -303,6 +309,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	loraReceiveModeInit();
   }
   if(GPIO_Pin == radio_btn_Pin) {
+
 	  GPS_String();
 	  loraTransmit(GPS.str, 11);
   }
