@@ -44,7 +44,7 @@ void Error_Handler(void);
 #define session_btn_Pin GPIO_PIN_1
 #define session_btn_GPIO_Port GPIOA
 #define session_btn_EXTI_IRQn EXTI1_IRQn
-#define radio_btn_Pin GPIO_PIN_2
+#define radio_btn_Pin GPIO_PIN_1
 #define radio_btn_GPIO_Port GPIOA
 #define GPS_Rx_Pin GPIO_PIN_3
 #define GPS_Rx_GPIO_Port GPIOA

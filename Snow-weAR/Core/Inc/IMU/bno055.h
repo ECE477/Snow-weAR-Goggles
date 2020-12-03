@@ -1,21 +1,21 @@
 #include <stdint.h>
 
-#define START_BYTE							0xAA
-#define RESPONSE_BYTE						0xBB
-#define ERROR_BYTE		  				0xEE
+#define START_BYTE					0xAA
+#define RESPONSE_BYTE				0xBB
+#define ERROR_BYTE		  			0xEE
 
 #define BNO055_I2C_ADDR_HI			0x29
 #define BNO055_I2C_ADDR_LO			0x28
 
 #define ERROR_WRITE_SUCCESS			0x01		// Everything worker as expected
-#define ERROR_WRITE_FAIL				0x03		// Check connection, protocol settings and operation more of BNO055
+#define ERROR_WRITE_FAIL			0x03		// Check connection, protocol settings and operation more of BNO055
 #define ERROR_REGMAP_INV_ADDR		0x04		// Invalid register address
-#define ERROR_REGMAP_WRITE_DIS	0x05		// Register is read-only
-#define ERROR_WRONG_START_BYTE	0x06		// Check if the first byte
+#define ERROR_REGMAP_WRITE_DIS		0x05		// Register is read-only
+#define ERROR_WRONG_START_BYTE		0x06		// Check if the first byte
 #define ERROR_BUS_OVERRUN_ERR		0x07		// Resend the command, BNO055 was not able to clear the receive buffer
-#define ERROR_MAX_LEN_ERR				0x08		// Split the command, max fire size can be up to 128 bytes
-#define ERROR_MIN_LEN_ERR				0x09		// Min length of data is less than 1
-#define ERROR_RECV_CHAR_TIMEOUT	0x0A		// Decrease the waiting time between sending of two bytes of one frame
+#define ERROR_MAX_LEN_ERR			0x08		// Split the command, max fire size can be up to 128 bytes
+#define ERROR_MIN_LEN_ERR			0x09		// Min length of data is less than 1
+#define ERROR_RECV_CHAR_TIMEOUT		0x0A		// Decrease the waiting time between sending of two bytes of one frame
 
 #define REG_WRITE								0x00
 #define REG_READ								0x01
