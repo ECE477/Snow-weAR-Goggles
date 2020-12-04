@@ -151,16 +151,12 @@ void session(void) {
 	int cur_temp = -1;
 
 	//IMU
-	int Vmag[2] = {0,0};
 	int Vmag_max[2] = {0,0};
 	int vxd,vyd,vzd;
 
 	float V[3] = {0.0,0.0,0.0};
 	float V_last[3] = {0.0,0.0,0.0};
 	float accel[3] = {0.0,0.0,0.0};
-
-    //IMU Testing
-    int * pureAccel;
 
 	while(1) {
 		if(state == 1 || state == 3 || state == 4)
@@ -188,15 +184,15 @@ void session(void) {
 		//IMU Velocity Mag (m/s)
 		getVelocity(V, V_last,accel);
 		char v_str[30];
-		sprintf(v_str, "V(m/s): %d.%d",(int)Vmag[0],abs((int)((Vmag[0]-(int)Vmag[0])*100)));
+		sprintf(v_str, "V(m/s): %d.%d",(int)V[0],abs((int)((V[0]-(int)V[0])*100)));
 		ssd1306_SetCursor(4, 20);
 		ssd1306_WriteString(v_str, Font_6x8, White);
 
 		//Max Velocity (m/s)
-		if(Vmag[0] > Vmag_max[0]){
-			if(Vmag[1] > Vmag_max[1]){
-				Vmag_max[0] = Vmag[0];
-				Vmag_max[1] = abs((int)((Vmag[0]-(int)Vmag[0])*100));
+		if((int)V[0] > Vmag_max[0]){
+			if( abs( (int)((V[0]-(int)V[0])*100) ) > Vmag_max[1] ){
+				Vmag_max[0] = (int)V[0];
+				Vmag_max[1] = abs((int)((V[0]-(int)V[0])*100));
 			}
 		}
 
@@ -211,7 +207,7 @@ void session(void) {
 		vzd = abs((int)((V_last[2]-(int)V_last[2])*100));
 
 		char vs_str[30];
-		sprintf(vs_str, "Vx:%d.%2d,Vy:%d.%2d,Vz:%d.%2d",(int)V_last[0],vxd,(int)V_last[1],vyd,(int)V_last[2],vzd);
+		sprintf(vs_str, "Vx:%d.%d,Vy:%d.%d,Vz:%d.%d",(int)V_last[0],vxd,(int)V_last[1],vyd,(int)V_last[2],vzd);
 		ssd1306_SetCursor(4, 40);
 		ssd1306_WriteString(vs_str, Font_6x8, White);
 

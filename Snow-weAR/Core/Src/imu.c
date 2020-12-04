@@ -128,7 +128,7 @@ void getVelocity(float * vmag, float * vlast, float * accel){
 	if(vmag[0] > 75) //Over Jump by IMU Sensor
 		vmag[0] == 0;
 
-	if(vmag[0] <= 0) //Reduce Noise / Sensor Error
+	if(vmag[0] <= 0.1) //Reduce Noise / Sensor Error
 		vmag[0] = 0;
 
 	//TODO Convert MPH
@@ -164,6 +164,19 @@ float * getLinearAccel(void){
 	laccelXYZ[0] = ((float)(accel_data[0]))/100.0f; // m per s^2
 	laccelXYZ[1] = ((float)(accel_data[1]))/100.0f; // m per s^2
 	laccelXYZ[2] = ((float)(accel_data[2]))/100.0f; // m per s^2
+
+	//Reduce Noise
+//	if(laccelXYZ[0] > 0.1 || laccelXYZ[0] < 0.1){
+//		laccelXYZ[0] = 0;
+//	}
+//
+//	if(laccelXYZ[1] > 0.1 || laccelXYZ[1] < 0.1){
+//		laccelXYZ[1] = 0;
+//	}
+//
+//	if(laccelXYZ[2] > 0.1 || laccelXYZ[2] < 0.1){
+//		laccelXYZ[2] = 0;
+//	}
 
 	return laccelXYZ;
 }
