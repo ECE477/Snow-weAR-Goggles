@@ -28,8 +28,12 @@ extern "C" {
 #endif
 
 #include "stm32l4xx_hal.h"
+#include "LoRa.h"
 
 void Error_Handler(void);
+
+#define LoRaDev // just initialize GPS, oLED, LoRa
+
 
 #define BB_GPOUT_Pin GPIO_PIN_0
 #define BB_GPOUT_GPIO_Port GPIOH
@@ -40,12 +44,10 @@ void Error_Handler(void);
 #define session_btn_Pin GPIO_PIN_1
 #define session_btn_GPIO_Port GPIOA
 #define session_btn_EXTI_IRQn EXTI1_IRQn
-#define radio_btn_Pin GPIO_PIN_2
+#define radio_btn_Pin GPIO_PIN_1
 #define radio_btn_GPIO_Port GPIOA
 #define GPS_Rx_Pin GPIO_PIN_3
 #define GPS_Rx_GPIO_Port GPIOA
-#define CS_LoRa_Pin GPIO_PIN_4
-#define CS_LoRa_GPIO_Port GPIOA
 #define LED_Pin GPIO_PIN_2
 #define LED_GPIO_Port GPIOB
 #define IMU_ADDR_Pin GPIO_PIN_12
@@ -60,6 +62,32 @@ void Error_Handler(void);
 #define GPSReg_ERR_GPIO_Port GPIOC
 #define GPSReg_Pwr_Pin GPIO_PIN_8
 #define GPSReg_Pwr_GPIO_Port GPIOC
+
+#ifdef LoRaDev
+
+#define DEV 1
+#define RXDone_GPIO_Port 		GPIOA
+#define RXDone_Pin 				GPIO_PIN_2
+#define RXDone_EXTI_IRQn 		EXTI2_IRQn
+#define LORA_GPIO_Port			GPIOE
+#define LORA_NSS_GPIO_Port		GPIOE
+#define LORA_NSS_Pin			GPIO_PIN_12
+#define LORA_RST_GPIO_Port		GPIOE
+#define LORA_RST_Pin			GPIO_PIN_10
+#define LORA_SPI_Port			GPIOE
+#define LORA_SCLK_Pin			GPIO_PIN_13
+#define LORA_MISO_Pin			GPIO_PIN_14
+#define LORA_MOSI_Pin			GPIO_PIN_15
+#define LORA_EXTI_IRQn			EXTI15_10_IRQn
+#define REG_FIFO				0x00
+
+
+#else
+
+#define DEV 0
+#define CS_LoRa_Pin GPIO_PIN_4
+#define CS_LoRa_GPIO_Port GPIOA
+#endif
 
 #ifdef __cplusplus
 }

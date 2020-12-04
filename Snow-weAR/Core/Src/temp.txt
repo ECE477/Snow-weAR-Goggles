@@ -62,8 +62,6 @@ void displayHomeScreen(void);
 void zeroStats(void);
 int sessionStart(void);
 void session(void);
-void sessionNoSpeed(void);
-void sessionRadio(void);
 
 int main(void) {
 	HAL_Init();
@@ -77,6 +75,7 @@ int main(void) {
 	MX_USART2_UART_Init();
 
 	state = 1;
+	ssd1306_Init();
 
     if(DEV) {
     	SPI1_Init();
@@ -88,21 +87,13 @@ int main(void) {
 		loraReceiveModeInit();
     }
 
-    ssd1306_Init();
-    ssd1306_Fill(Black);
-    ssd1306_UpdateScreen();
-
     BNO055_Init_I2C(&hi2c1);
 
     while(1) {
     	if(state == 1) {
     		displayHomeScreen();
-    	} else if(state == 2) {
+    	} else if(state == 2 || state == 3) {
     		session();
-    	} else if(state == 3){
-    		sessionNoSpeed();
-    	} else if(state == 4){
-    		sessionRadio();
     	}
     }
 }
@@ -151,19 +142,13 @@ void session(void) {
 	int cur_temp = -1;
 
 	//IMU
-	int Vmag[2] = {0,0};
-	int Vmag_max[2] = {0,0};
-	int vxd,vyd,vzd;
-
-	float V[3] = {0.0,0.0,0.0};
-	float V_last[3] = {0.0,0.0,0.0};
-	float accel[3] = {0.0,0.0,0.0};
-
-    //IMU Testing
-    int * pureAccel;
+	int *accel;
+	int V[2] = {0,0};
+	int V_last[2] = {0,0};
+	int V_max[2] = {0,0};
 
 	while(1) {
-		if(state == 1 || state == 3 || state == 4)
+		if(state == 1)
 			return;
 		uint16_t soc = BB_soc(&hi2c1, 0);
 		if(soc != cur_soc) {
@@ -184,103 +169,51 @@ void session(void) {
 			ssd1306_DrawCircle(115, 11, 1, White);
 		}
 
-
 		//IMU Velocity Mag (m/s)
-		getVelocity(V, V_last,accel);
-		char v_str[30];
-		sprintf(v_str, "V(m/s): %d.%d",(int)Vmag[0],(int) abs(Vmag[0] - (int)Vmag[0]) * 100);
-		ssd1306_SetCursor(4, 20);
-		ssd1306_WriteString(v_str, Font_6x8, White);
+		accel = getAvgAcceleration();
+		V[0] = V_last[0] + accel[0];
+		V[1] = V_last[1] + accel[1];
 
-		//Max Velocity (m/s)
-		if(Vmag[0] > Vmag_max[0]){
-			if(Vmag[1] > Vmag_max[1]){
-				Vmag_max[0] = Vmag[0];
-				Vmag_max[1] = (int) abs(Vmag[0] - (int)Vmag[0]) * 100;
+		if(V[0] > 67){
+			V[0] == 0;
+		}
+
+		V_last[0] = V[0];
+		V_last[1] = V[1];
+
+		if(V[0] > V_max[0]){
+			if(V[1] > V_max[1]){
+				V_max[0] = V[0];
+				V_max[1] = V[1];
 			}
 		}
 
+		char v_str[30];
+		sprintf(v_str, "V (m/s): %d.%d",V[0],V[1]);
+		ssd1306_SetCursor(4, 20);
+		ssd1306_WriteString(v_str, Font_6x8, White);
+
 		char vmx_str[30];
-		sprintf(vmx_str, "Vmax(m/s): %d.%d",Vmag_max[0],Vmag_max[1]);
+		sprintf(vmx_str, "Vmax(m/s): %d.%d",V_max[0],V_max[1]);
 		ssd1306_SetCursor(4, 30);
 		ssd1306_WriteString(vmx_str, Font_6x8, White);
-
-		//Individual Velocity
-		vxd = 100 * abs(V_last[0] - (int)(V_last[0]));
-		vyd = 100 * abs(V_last[1] - (int)(V_last[1]));
-		vzd = 100 * abs(V_last[2] - (int)(V_last[2]));
-
-		char vs_str[30];
-		sprintf(vs_str, "Vx:%d.%2d,Vy:%d.%2d,Vz:%d.%2d",(int)V_last[0],vxd,(int)V_last[1],vyd,(int)V_last[2],vzd);
-		ssd1306_SetCursor(4, 40);
-		ssd1306_WriteString(vs_str, Font_6x8, White);
-
-
-		// Read GPS
-//		char lat_str[15];
-//		char lon_str[15];
-//		sprintf(lat_str, "%2d.%2d%c", (int)GPS.LatDec, (int)((GPS.LatDec-(int)GPS.LatDec)*100), GPS.NS_Indicator);
-//		ssd1306_SetCursor(30, 40);
-//		ssd1306_WriteString(lat_str, Font_6x8, White);
-//		ssd1306_SetCursor(72, 40);
-//		sprintf(lon_str, "%2d.%2d%c", (int)GPS.LonDec, (int)((GPS.LonDec-(int)GPS.LonDec)*100), GPS.EW_Indicator);
-//		ssd1306_WriteString(lon_str, Font_6x8, White);
-//		ssd1306_SetCursor(4, 40);
-//		char gps_msg[10];
-//		sprintf(gps_msg, "GPS:");
-//		ssd1306_WriteString(gps_msg, Font_6x8, White);
-//
-//		ssd1306_SetCursor(4, 54);
-//		ssd1306_WriteString(gpsStringData, Font_6x8, White);
-
-		// Update Screen
-		ssd1306_UpdateScreen();
-	}
-	inSession = false;
-	return;
-}
-
-void sessionNoSpeed(void) {
-	ssd1306_Fill(Black);
-
-	int cur_soc = -1;
-	int cur_temp = -1;
-
-	while(1) {
-		if(state == 1 || state == 2 || state == 4)
-			return;
-		uint16_t soc = BB_soc(&hi2c1, 0);
-		if(soc != cur_soc) {
-			cur_soc = soc;
-			ssd1306_SetCursor(100, 54);
-			char soc_str[30];
-			sprintf(soc_str, "%3d%% ", soc);
-			ssd1306_WriteString(soc_str, Font_6x8, White);
-		}
-
-		uint16_t temp = readTemp(&hi2c1);
-		if(temp != cur_temp) {
-			cur_temp = temp;
-			char temp_str[15];
-			sprintf(temp_str, "%2d.%1d F",(int)temp/10, (int)temp%10);
-			ssd1306_SetCursor(89, 10);
-			ssd1306_WriteString(temp_str, Font_6x8, White);
-			ssd1306_DrawCircle(115, 11, 1, White);
-		}
 
 		// Read GPS
 		char lat_str[15];
 		char lon_str[15];
 		sprintf(lat_str, "%2d.%2d%c", (int)GPS.LatDec, (int)((GPS.LatDec-(int)GPS.LatDec)*100), GPS.NS_Indicator);
-		ssd1306_SetCursor(30, 30);
+		ssd1306_SetCursor(30, 40);
 		ssd1306_WriteString(lat_str, Font_6x8, White);
-		ssd1306_SetCursor(72, 30);
+		ssd1306_SetCursor(72, 40);
 		sprintf(lon_str, "%2d.%2d%c", (int)GPS.LonDec, (int)((GPS.LonDec-(int)GPS.LonDec)*100), GPS.EW_Indicator);
 		ssd1306_WriteString(lon_str, Font_6x8, White);
-		ssd1306_SetCursor(4, 30);
+		ssd1306_SetCursor(4, 40);
 		char gps_msg[10];
 		sprintf(gps_msg, "GPS:");
 		ssd1306_WriteString(gps_msg, Font_6x8, White);
+
+		ssd1306_SetCursor(4, 54);
+		ssd1306_WriteString(gpsStringData, Font_6x8, White);
 
 		// Update Screen
 		ssd1306_UpdateScreen();
@@ -288,50 +221,6 @@ void sessionNoSpeed(void) {
 	inSession = false;
 	return;
 }
-
-void sessionRadio(void) {
-	ssd1306_Fill(Black);
-	HAL_NVIC_EnableIRQ(RXDone_EXTI_IRQn);
-
-	int cur_soc = -1;
-	int cur_temp = -1;
-
-	while(1) {
-		if(state == 1 || state == 2 || state == 3)
-			return;
-		uint16_t soc = BB_soc(&hi2c1, 0);
-		if(soc != cur_soc) {
-			cur_soc = soc;
-			ssd1306_SetCursor(100, 54);
-			char soc_str[30];
-			sprintf(soc_str, "%3d%% ", soc);
-			ssd1306_WriteString(soc_str, Font_6x8, White);
-		}
-
-		uint16_t temp = readTemp(&hi2c1);
-		if(temp != cur_temp) {
-			cur_temp = temp;
-			char temp_str[15];
-			sprintf(temp_str, "%2d.%1d F",(int)temp/10, (int)temp%10);
-			ssd1306_SetCursor(89, 10);
-			ssd1306_WriteString(temp_str, Font_6x8, White);
-			ssd1306_DrawCircle(115, 11, 1, White);
-		}
-
-		//Display Radio Data
-		ssd1306_SetCursor(4, 30);
-		char write_this[25];
-		sprintf(write_this, "GPS data from LoRa:");
-		ssd1306_WriteString(write_this, Font_6x8, White);
-		ssd1306_SetCursor(4, 40);
-		ssd1306_WriteString(gpsStringData, Font_6x8, White);
-
-		// Update Screen
-		ssd1306_UpdateScreen();
-	}
-	return;
-}
-
 
 int sessionStart(void) {
 	int ss_ok = 0;
@@ -401,40 +290,25 @@ void zeroStats(void) {
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   /* EXTI line interrupt detected */
 	//HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-
   if(GPIO_Pin == session_btn_Pin){
 	  int session_btn_val = HAL_GPIO_ReadPin(session_btn_GPIO_Port, session_btn_Pin);
-
-	  if(session_btn_val){
-		  //Toggle Screen
-		  if(state == 2){
-			//Button Pressed Second Time -> Go to State 3
-			ssd1306_Fill(Black);
-			ssd1306_UpdateScreen();
-			state = 3;
+	  if(inSession == false) {
+		  if(state == 2) {
+			  state = 3;
+		  } else {
+			  state = 2;
 		  }
-		  else if(state == 3) {
-			ssd1306_Fill(Black);
-			ssd1306_UpdateScreen();
-			state = 4;
-		  }
-		  else if(state == 4) {
-			ssd1306_Fill(Black);
-			ssd1306_UpdateScreen();
-			HAL_NVIC_DisableIRQ(RXDone_EXTI_IRQn);
-			state = 1;
-		  }
-		  else {
-			ssd1306_Fill(Black);
-			ssd1306_UpdateScreen();
-			state = 2; //Home
-		  }
-
-		  //Send GPS Data
-		  uint8_t pack[] = "TEST";
-		  loraTransmit(pack,4);
+		  inSession = true;
 	  }
-
+	  /*
+	  if(session_btn_val) {
+		  state = 2;
+	  } else {
+		ssd1306_Fill(Black);
+		ssd1306_UpdateScreen();
+		state = 1; //Home
+	  }
+	*/
   }
   if(GPIO_Pin == RXDone_Pin){
 	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, GPIO_PIN_SET);
@@ -679,7 +553,7 @@ void SystemClock_Config(void) {
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE; // CHANGED
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
   RCC_OscInitStruct.PLL.PLLM = 1;
   RCC_OscInitStruct.PLL.PLLN = 40;
