@@ -1,0 +1,8 @@
+LoRa.c:10:9:readReg	8	static
+LoRa.c:29:6:writeReg	16	static
+LoRa.c:39:6:loraStandbyMode	8	static
+LoRa.c:49:5:LoRa_Init	8	static
+LoRa.c:90:6:loraTransmit	16	static
+LoRa.c:112:6:readFIFO	16	static
+LoRa.c:120:6:loraReceive	8	static
+LoRa.c:135:6:loraReceiveModeInit	8	static

@@ -1,0 +1,4 @@
+usart.c:5:6:MX_GPIO_Init_USART	40	static
+usart.c:21:6:MX_USART2_UART_Init	8	static
+usart.c:41:6:HAL_UART_MspInit	40	static
+usart.c:68:6:HAL_UART_MspDeInit	8	static

@@ -1,0 +1,6 @@
+imu.c:56:5:BNO055_Init_I2C	80	static
+imu.c:124:9:GetAccelData	24	static
+imu.c:142:9:GetAccelChipId	24	static
+imu.c:148:9:GetAccelTemp	24	static
+imu.c:157:9:BNO055_Get_Calibration	24	static
+imu.c:166:6:BNO055_Calc_Calibration	4	static
