@@ -118,17 +118,24 @@ void getVelocity(float * vmag, float * vlast, float * accel){
 	float vy = vlast[1] + accel[1] * 0.01;
 	float vz = vlast[2] + accel[2] * 0.01;
 
-	vlast[0] = vx;
-	vlast[1] = vy;
-	vlast[2] = vz;
+	//Reduce Noise
+//	if(accel[0] * 0.001 > 0.1 || accel[0] * 0.001 < 0.1){
+		vlast[0] = vx;
+//	}
+//	if(accel[1] * 0.001 > 0.1 || accel[1] * 0.001 < 0.1){
+		vlast[1] = vy;
+//	}
+//	if(accel[2] * 0.001 > 0.1 || accel[2] * 0.001 < 0.1){
+		vlast[2] = vz;
+//	}
 
 	//Find Mag
-	vmag[0] = sqrt((vx*vx) + (vy*vy) + (vz*vz));
+	vmag[0] = sqrt((vlast[0]*vlast[0]) + (vlast[1]*vlast[1]) + (vlast[2]*vlast[2]));
+
+	if(vmag[0] < 0.5) //Reduce Noise / Sensor Error
+		vmag[0] = 0;
 
 	if(vmag[0] > 75) //Over Jump by IMU Sensor
-		vmag[0] == 0;
-
-	if(vmag[0] <= 0.1) //Reduce Noise / Sensor Error
 		vmag[0] = 0;
 
 	//TODO Convert MPH
@@ -164,19 +171,6 @@ float * getLinearAccel(void){
 	laccelXYZ[0] = ((float)(accel_data[0]))/100.0f; // m per s^2
 	laccelXYZ[1] = ((float)(accel_data[1]))/100.0f; // m per s^2
 	laccelXYZ[2] = ((float)(accel_data[2]))/100.0f; // m per s^2
-
-	//Reduce Noise
-//	if(laccelXYZ[0] > 0.1 || laccelXYZ[0] < 0.1){
-//		laccelXYZ[0] = 0;
-//	}
-//
-//	if(laccelXYZ[1] > 0.1 || laccelXYZ[1] < 0.1){
-//		laccelXYZ[1] = 0;
-//	}
-//
-//	if(laccelXYZ[2] > 0.1 || laccelXYZ[2] < 0.1){
-//		laccelXYZ[2] = 0;
-//	}
 
 	return laccelXYZ;
 }
