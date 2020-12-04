@@ -97,6 +97,7 @@ void loraTransmit(uint8_t *data, uint8_t length){
 	}
 	writeReg(RH_RF95_REG_22_PAYLOAD_LENGTH, length);
 
+
 	writeReg(RH_RF95_REG_01_OP_MODE, 0x03); //TX Mode
 	//writeReg(RH_RF95_REG_40_DIO_MAPPING1, 0x40); //DIO0
 
