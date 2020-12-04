@@ -10,8 +10,6 @@
 
 #include "main.h"
 #define GPSDATALEN 28
-#define LORAHEADERLEN 3
-#define LORADATALEN (GPSDATALEN + LORAHEADERLEN + 1)
 
 int LoRa_Init(void);
 void loraTransmit(uint8_t *buffer, uint8_t len);
