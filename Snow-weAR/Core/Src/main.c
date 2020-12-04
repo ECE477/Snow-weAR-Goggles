@@ -188,7 +188,7 @@ void session(void) {
 		//IMU Velocity Mag (m/s)
 		getVelocity(V, V_last,accel);
 		char v_str[30];
-		sprintf(v_str, "V(m/s): %d.%d",(int)Vmag[0],(int) abs(Vmag[0] - (int)Vmag[0]) * 100);
+		sprintf(v_str, "V(m/s): %d.%d",(int)Vmag[0],abs((int)((Vmag[0]-(int)Vmag[0])*100)));
 		ssd1306_SetCursor(4, 20);
 		ssd1306_WriteString(v_str, Font_6x8, White);
 
@@ -196,7 +196,7 @@ void session(void) {
 		if(Vmag[0] > Vmag_max[0]){
 			if(Vmag[1] > Vmag_max[1]){
 				Vmag_max[0] = Vmag[0];
-				Vmag_max[1] = (int) abs(Vmag[0] - (int)Vmag[0]) * 100;
+				Vmag_max[1] = abs((int)((Vmag[0]-(int)Vmag[0])*100));
 			}
 		}
 
@@ -206,9 +206,9 @@ void session(void) {
 		ssd1306_WriteString(vmx_str, Font_6x8, White);
 
 		//Individual Velocity
-		vxd = 100 * abs(V_last[0] - (int)(V_last[0]));
-		vyd = 100 * abs(V_last[1] - (int)(V_last[1]));
-		vzd = 100 * abs(V_last[2] - (int)(V_last[2]));
+		vxd = abs((int)((V_last[0]-(int)V_last[0])*100));
+		vyd = abs((int)((V_last[1]-(int)V_last[1])*100));
+		vzd = abs((int)((V_last[2]-(int)V_last[2])*100));
 
 		char vs_str[30];
 		sprintf(vs_str, "Vx:%d.%2d,Vy:%d.%2d,Vz:%d.%2d",(int)V_last[0],vxd,(int)V_last[1],vyd,(int)V_last[2],vzd);

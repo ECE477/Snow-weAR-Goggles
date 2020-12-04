@@ -126,10 +126,10 @@ void getVelocity(float * vmag, float * vlast, float * accel){
 	vmag[0] = sqrt((vx*vx) + (vy*vy) + (vz*vz));
 
 	if(vmag[0] > 75) //Over Jump by IMU Sensor
-		Vmag[0] == 0;
+		vmag[0] == 0;
 
-	if(Vmag[0] <= 0) //Reduce Noise / Sensor Error
-		Vmag[0] = 0;
+	if(vmag[0] <= 0) //Reduce Noise / Sensor Error
+		vmag[0] = 0;
 
 	//TODO Convert MPH
 }
